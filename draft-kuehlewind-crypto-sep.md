@@ -21,7 +21,7 @@ author:
     country: Switzerland
 
 informative:
-
+   I-D.moskowitz-sse:
 
 
 --- abstract
@@ -67,6 +67,11 @@ or refresh state any time triggered by external events such as the start up of t
 This document discusses high-level requirements for a future TLS-like crypto protocol that provides
 support for this connection separation as well as possible interfaces between the cryptographic protocol
 and the transport protocol that is used for the transmission of the application data.
+
+{{I-D.moskowitz-sse}} proposes a similar approach. However while {{I-D.moskowitz-sse}} proposes 
+a new protocol to negotiate and maintain long-term cryptographic sessions, 
+this document relies on the use of existing protocols and only discusses requirement the evolotion
+of these protocols and exchange of information within one endpoint locally.
 
 # Requirements
 
