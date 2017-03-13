@@ -95,7 +95,7 @@ is responsible to perform the encryption set.
 
 # IANA Considerations
 
-This docuement has on request to IANA.
+This document has on request to IANA.
 
 # Security Considerations
 
