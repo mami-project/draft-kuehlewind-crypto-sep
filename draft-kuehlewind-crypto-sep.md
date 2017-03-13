@@ -28,11 +28,11 @@ informative:
 
 Based on the increasing deployment of session resumption mechanisms where cryptographic context 
 can be resumed to transmit application data with the first packet without delay for connection setup 
-and negotiation, this draft proposed a split to separate connections that are used to set up encryption 
-context and negotiate capabilities from the connection that is used to transmit application data.
-While cryptographic context and endpoint capabilities needs to be be known before encrypted 
+and negotiation, this draft proposes a split to separate connections used to set up encryption 
+context and negotiate capabilities from connections used to transmit application data.
+While cryptographic context and endpoint capabilities need to be be known before encrypted 
 application data can be sent, there is otherwise no technical constraint that the crypto handshake 
-has to be performed on the same transport connection. This document discussed requirements on the 
+has to be performed on the same transport connection. This document discusses requirements on the 
 cryptographic protocol to establish medium- to long-lived association that can be used by different
 transport protocols that implement different transport services.
 
@@ -70,16 +70,16 @@ and the transport protocol that is used for the transmission of the application 
 
 {{I-D.moskowitz-sse}} proposes a similar approach. However while {{I-D.moskowitz-sse}} proposes 
 a new protocol to negotiate and maintain long-term cryptographic sessions, 
-this document relies on the use of existing protocols and only discusses requirement the evolotion
+this document relies on the use of existing protocols and only discusses requirements for the evolution
 of these protocols and exchange of information within one endpoint locally.
 
 # Requirements
 
-## Providing Support for different transport services
+## Support for different transport services
 
 e.g. partial or non-reliable transports
 
-## crypto context live time management
+## Cryptographic context lifetime management
 
 
 # Crypto-Transport Interface
