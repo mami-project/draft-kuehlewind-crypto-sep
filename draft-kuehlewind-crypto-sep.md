@@ -77,9 +77,13 @@ of these protocols and exchange of information within one endpoint locally.
 
 ## Support for different transport services
 
-e.g. partial or non-reliable transports
+[editor's note: this section will discuss requirement for crypto protocols to provide cryptographic context
+that can support different transport feature e.g. partial or non-reliable transports]
 
 ## Cryptographic context lifetime management
+
+[editor's note: this section will discuss lifetime management of long-lived cryptographic associations, e.g.
+when to set up or refresh state for which endpoint and which transport protocols]
 
 
 # Crypto-Transport Interface
@@ -95,6 +99,9 @@ This docuement has on request to IANA.
 
 # Security Considerations
 
+[editor's note: this section will be added later. However, this document discusses the use of 
+cryptograohic context for transport connections and as such it has security relevant consideration
+within the whole document.]
 
 # Acknowledgments
 
