@@ -21,6 +21,8 @@ author:
     country: Switzerland
 
 informative:
+   RFC5246:
+   I-D.ietf-quic-tls:
    I-D.moskowitz-sse:
 
 
@@ -36,92 +38,126 @@ has to be performed on the same transport connection. This document discusses re
 cryptographic protocol to establish medium- to long-lived association that can be used by different
 transport protocols that implement different transport services.
 
-
 --- middle
 
 # Introduction
 
-New cryptographic and transport protocols increasingly rely on session resumption mechanisms
-where cryptographic context can be resumed to transmit application data with the first packet
-without delay for connection setup and negotiation. This draft proposed a split to separate
-connections that are used to set up encryption context and negotiate capabilities from the
-connection that is used to transmit application data. In this draft we assume the use of TCP with
-a TLS-like protocol for cryptographic handshake and negotiation of endpoint capabilities, where TCP
-provides a fully reliable stream-based transport and the message framing is realized by TLS.
-However, instead of using the same transport TCP connection for TLS or any new TLS-like protocol,
-the connection will be closed after the cryptographic handshake and a new transport connection
-that might not use TCP is open at anytime to transmit the actual application data.
+Secure transport protocols are generally composed of three pieces:
 
+1. A transport protocol to control the transfer of data.
+2. A record protocol to encode and, optionally, encrypt packets or datagrams.
+3. A handshake protocol to negotiate cryptographic secrets.
+
+For ease of deployment and standardization, among other reasons, these constituents are often tightly
+coupled. For example, in TLS {{RFC5246}}, the handshake protocol depends on the record protocol,
+and vice versa. However, more recent transport protocols such as QUIC {{I-D.ietf-quic-tls}} keep
+these pieces separate. QUIC uses TLS to negotiate secrets, and *exports* those secrets
+to encrypt packets directly.
+
+~~~
++---------------+                +---------------+
+|               +---------------->               |
+|   Transport   |                |   Handshake   |
+|               <----------------+               |
++-+-----^-------+                +-----+-----^---+
+  |     |                              |     |
+  |     |                              |     |
+  |     |                              |     |
+  |     |        +---------------+     |     |
+  |     +--------+               <-----+     |
+  |              |    Record     |           |
+  +-------------->               +-----------+
+                 +---------------+
+~~~
+
+This separation is important, as new secure transport protocols increasingly rely on
+session resumption mechanisms where cryptographic context can be resumed to transmit
+application data with the first packet without delay for connection setup and negotiation.
 In the case where there is no cryptographic context available when an application
-expressed the wish to transmit data to a certain endpoint, the connection for crypto
+expressed the wish to transmit data to a certain endpoint, the connection for cryptographic
 negotiation must be established first, immediately before the actual payload connection
 will be used. In this case, as today for approaches that integrate both the cryptographic
 handshake and the payload transmission, the application data transmission is delayed until
-the needed cryptographic context is available. Just using a separate transport connection
-for these two actions does not generally introduce any extra delay. However, given that these
-steps don't have to be performed at the same time, crypto negotiation could even be performed (long)
-before the application expresses a desire to send data. E.g. an integrated or independent software
+the needed cryptographic context is available. If the handshake and transport components
+are separate, then the handshake protocol can use a separate transport connection to
+establish secrets without blocking the application's main transport connection. Moreover,
+this negotiation could be performed a priori and out of band before the application expresses
+a desire to send data. For example, an integrated or independent software
 system could maintain knowledge about endpoints that are likely to be communication points and set up
 or refresh state any time triggered by external events such as the start up of this system or periodically.
 
-This document discusses high-level requirements for a future TLS-like crypto protocol that provides
-support for this connection separation as well as possible interfaces between the cryptographic protocol
-and the transport protocol that is used for the transmission of the application data.
+This document discusses high-level interface requirements for separating the three
+primary features of a secure transport protocol.
 
 {{I-D.moskowitz-sse}} proposes a similar approach. However while {{I-D.moskowitz-sse}} proposes
 a new protocol to negotiate and maintain long-term cryptographic sessions,
 this document relies on the use of existing protocols and only discusses requirements for the evolution
 of these protocols and exchange of information within one endpoint locally.
 
-# Requirements
+# Minimal Transport Security Features
 
-1.
----> draw the boxes
---- rewrite this as a generic definitions section
-handshake: given a transport, negotiate a shared secret (handshake is the application given an entire stack)
-record: given a secret and interface to a ()
+Transport functionality aside, there are several critical features common to most
+transport security protocols. Some of these features belong to the handshake
+piece of the protocol, whereas others belong to the record piece. We highlight
+these features in this section.
 
-2. survey lessons learned
-minimal features
+## Mandatory Features
 
-3. interface description!
+### Handshake
 
-4. existing mappings...
+- Forward-secure segment encryption and authentication: Transit data must be protected with an
+authenticated encryption algorithm.
 
+- Private key interface or injection: Authentication based on public key signatures is commonplace for
+many transport security protocols.
 
+- Endpoint authentication: The endpoint (receiver) of a new connection must be authenticated before any
+data is sent to said party.
 
+- Source validation: Source validation must be provided to mitigate server-targeted DoS attacks. This can
+be done with puzzles or cookies.
 
+### Record
 
+- Pre-shared key support: A record protocol must be able to use a pre-shared key established
+out-of-band to encrypt individual messages, packets, or datagrams.
 
+## Optional Features
 
+### Handshake
 
+- Mutual authentication: Transport security protocols should allow both endpoints to authenticate one another if needed.
 
+- Application-layer feature negotiation: The type of application using a transport security protocol often requires
+features configured at the connection establishment layer, e.g., ALPN {{RFC7301}}. Moreover, application-layer features may often be used to
+offload the session to another server which can better handle the request. (The TLS SNI is one example of such a feature.)
+As such, transport security protocols should provide a generic mechanism to allow for such application-specific features
+and options to be configured or otherwise negotiated.
 
-## Support for different transport services
+- Configuration extensions: The protocol negotiation should be extensible with addition of new configuration options.
 
-[editor's note: this section will discuss requirement for crypto protocols to provide cryptographic context
-that can support different transport feature e.g. partial or non-reliable transports]
+- Session caching and management: Sessions should be cacheable to enable reuse and amortize the cost of performing
+session establishment handshakes.
 
-## Cryptographic context lifetime management
+### Record
 
-[editor's note: this section will discuss lifetime management of long-lived cryptographic associations, e.g.
-when to set up or refresh state for which endpoint and which transport protocols]
-
+- Connection mobility: Sessions should not be bound to a network connection (or 5 tuple). This allows cryptographic
+key material and other state information to be reused in the event of a connection change. Examples of this include
+a NAT rebinding that occurs without a client's knowledge.
 
 # Crypto-Transport Interface
 
 There are two basic approaches: either the transport protocol can provide data to the crypto engine
 and get back an encrypted version of the data to be sent, or the crypto protocol can provide keying
 material and inform the transport about the negotiated capabilities of the far end and the transport
-is responsible to perform the encryption set. As we seek to decouple the crypto layer from...
-
-
-The minimum interface for transport security protocols defines the set of calls that an application interface must
-expose in order to generically use the common protocol features described in this document. The mandatory interfaces
-are required to functionally use the protocols, while the optional interfaces allow the application to constrain the
-protocol or retrieve extra information.
-
-
+is responsible to perform the encryption set. In both cases, we seek to decouple the crypto layer
+from the transport layer. Thus, we require some interface between the transport
+and record protocols. Based on the minimum set of features described in the previous
+section, we now describe a minimal interface for these components.
+Here, a minimal interface defines the set of calls that an application interface must
+expose in order to generically use a particular feature. The mandatory interfaces are
+required to functionally use the protocols, while the optional interfaces allow the
+application to constrain the protocol or retrieve extra information.
 
 ## Mandatory Interfaces
 
@@ -159,6 +195,22 @@ cached keys, as well as the lifetime of cached resources.
 
 - The protocol SHOULD expose the peer's identity information.
 
+# Existing Mappings
+
+In this section we document existing mappings between common transport security
+protocols and the three components described in Section I.
+
+## TLS/DTLS
+
+XXX
+
+## QUIC
+
+XXX
+
+## IKEv2 + ESP
+
+XXX
 
 # IANA Considerations
 
