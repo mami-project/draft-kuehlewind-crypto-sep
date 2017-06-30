@@ -40,6 +40,7 @@ author:
 informative:
    RFC4303:
    RFC5246:
+   RFC6347:
    RFC7296:
    RFC7301:
    I-D.ietf-quic-tls:
@@ -184,19 +185,19 @@ cached keys, as well as the lifetime of cached resources.
 In this section we document existing mappings between common transport security
 protocols and the three components described in Section I.
 
-## TLS/DTLS
+- TLS/DTLS: TLS {{RFC5246}} and DTLS {{RFC6347}} is a combination of a handshake and record protocol,
+with a dependency on some underlying transport.
 
-XXX
+- QUIC + TLS: The emerging QUIC standard is decomposed into the three pieces outlined in Section I {{I-D.ietf-quic-tls}}.
+TLS is used as the handshake protocol, a QUIC-specific record protocol encrypts and encapsulates
+frames, and the main QUIC component handles the transport of these frames.
 
-## QUIC
+- IKEv2 + ESP: IKEv2 {{RFC7296}} is a handshake protocol commonly used to establish keys for
+use in IPsec (often VPN) deployments. It is already a distinct protocol from its commonly paired
+record protocol, which is ESP {{RFC4303}}. ESP encrypts and authenticates IP datagrams, and sends
+them as datagrams over a transport mechanism such, e.g., IP or UDP.
 
-XXX
-
-## IKEv2 + ESP
-
-IKEv2 {{RFC7296}} is a handshake protocol commonly used to establish keys for use in IPsec (often VPN) deployments. It is already a distinct protocol from its commonly paired record protocol, which is ESP {{RFC4303}}. ESP encrypts and authenticates IP datagrams, and sends them as datagrams over IP or UDP.
-
-# Benefits of Separation 
+# Benefits of Separation
 
 ## Reducing Connection Latency
 
