@@ -1,7 +1,7 @@
 ---
 title: Separating Crypto Negotiation and Communication
 abbrev: crypto separation
-docname: draft-kuehlewind-crypto-sep-00
+docname: draft-kuehlewind-crypto-sep-latest
 date:
 category: info
 
@@ -112,9 +112,9 @@ By teasing apart all three portions as separate protocols, there end up being si
 
 ~~~
 Application Data
-     |
-     |
-+----V----------+      (1)       +---------------+
+     |    ^
+     |    |
++----V----+-----+      (1)       +---------------+
 |               +---------------->               |
 |   Transport   |                |   Handshake   |
 |               <----------------+               |
@@ -128,6 +128,7 @@ Application Data
   +-------------->               +-----------+
                  +---------------+
 ~~~
+{: #fig-dependencies title="Secure Transport Protocol Components and Interactions"}
 
 1. A transport protocol depends upon a handshake protocol to establish keying material to protect application data being sent through the transport. The main interface it relies upon is starting the handshake, or ensuring that the material is ready.
 2. A handshake protocol depends upon a transport protocol in order to send and receive negotiation messages with the remote peer.
@@ -198,9 +199,9 @@ This document has on request to IANA.
 
 # Security Considerations
 
-[editor's note: this section will be added later. However, this document discusses the use of
-cryptograohic context for transport connections and as such it has security relevant consideration
-within the whole document.]
+(editor's note: this section will be added later. However, this document discusses the use of
+cryptographic context for transport connections and as such it has security relevant consideration
+within the whole document.)
 
 # Acknowledgments
 
