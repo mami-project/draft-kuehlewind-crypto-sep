@@ -38,10 +38,13 @@ author:
     email: cawood@apple.com
 
 informative:
+   RFC4303:
    RFC5246:
+   RFC7296:
    RFC7301:
    I-D.ietf-quic-tls:
    I-D.moskowitz-sse:
+   I-D.mglt-ipsecme-diet-esp:
 
 
 --- abstract
@@ -100,7 +103,7 @@ of these protocols and exchange of information within one endpoint locally.
 
 # Protocol Interfaces
 
-In traditional models in which the protocols are not seperated out into the three elements of handshake,
+In traditional models in which the protocols are not separated out into the three elements of handshake,
 record, and transport protocols, there are two basic approaches to the interactions:
 
 1. The transport protocol provides data to the security protocol and gets back an encrypted version of
@@ -191,7 +194,21 @@ XXX
 
 ## IKEv2 + ESP
 
-XXX
+IKEv2 {{RFC7296}} is a handshake protocol commonly used to establish keys for use in IPsec (often VPN) deployments. It is already a distinct protocol from its commonly paired record protocol, which is ESP {{RFC4303}}. ESP encrypts and authenticates IP datagrams, and sends them as datagrams over IP or UDP.
+
+# Benefits of Separation 
+
+## Reducing Connection Latency
+
+One of the clearest benefits of separating the handshake protocol from the record protocol is that the handshake can be performed out-of-band from the application's data transfer. This should essentially reduce the number of RTTs required before being able to send data by the full length of the handshake (which is commonly 1 or 2 RTTs in the best cases for TLS 1.2 and IKEv2, potentially more if cookie challenges or extended authentication are required).
+
+To avoid long-lived transport connections that wouldn't be actively used, and thus would be vulnerable to timeouts on NATs or firewalls, an obvious approach to separating the handshake and record protocols is to use different transport connections for the early handshake and the data transfer. However, this approach of using separate connections will not always save RTTs if the handshake and data transfer are back-to-back. Each connection may require its own transport protocol handshake, and if the data transfer must wait for two transport protocols to establish before sending, then it will experience higher latency. Implementations SHOULD avoid this by either allowing the handshake and record protocols to share a single transport connection when the handshake protocol has not pre-fetched keys, or else ensuring that this scenario does not occur by always having the handshake protcol refresh the keys whenever old ones are near expiry.
+
+## Protocol Flexibility
+
+Separation of the handshake, record, and transport protocols also allows for more flexible composition of protocols with one another. If a deployment uses a handshake protocol like TLS, which requires a stream-based transport protocol like TCP, separation of protocols will allow it to use the resulting keys for record protocols that run on datagram transport protocols like UDP.
+
+This flexibility may be useful for implementations that are optimizing for packet size by choosing minimal/lightweight record protocols, while being able to use commonly supported handshake protocols like TLS. One example here is the approach of a VPN tunnel that uses ESP or Diet-ESP {{I-D.mglt-ipsecme-diet-esp}} to encrypt datagrams, but uses TLS for establishing keys.
 
 # IANA Considerations
 
