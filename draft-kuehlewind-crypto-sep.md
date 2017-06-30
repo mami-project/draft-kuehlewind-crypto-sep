@@ -12,6 +12,7 @@ stand_alone: yes
 pi: [toc, sortrefs, symrefs]
 
 author:
+ -
     ins: M. Kuehlewind
     name: Mirja Kuehlewind
     org: ETH Zurich
@@ -19,24 +20,39 @@ author:
     street: Gloriastrasse 35
     city: 8092 Zurich
     country: Switzerland
+ -
+    ins: T. Pauly
+    name: Tommy Pauly
+    org: Apple Inc.
+    street: 1 Infinite Loop
+    city: Cupertino, California 95014
+    country: United States of America
+    email: tpauly@apple.com
+ -
+    ins: C. A. Wood
+    name: Christopher A. Wood
+    org: Apple Inc.
+    street: 1 Infinite Loop
+    city: Cupertino, California 95014
+    country: United States of America
+    email: cawood@apple.com
 
 informative:
    RFC5246:
+   RFC7301:
    I-D.ietf-quic-tls:
    I-D.moskowitz-sse:
 
 
 --- abstract
 
-Based on the increasing deployment of session resumption mechanisms where cryptographic context
-can be resumed to transmit application data with the first packet without delay for connection setup
-and negotiation, this draft proposes a split to separate connections used to set up encryption
-context and negotiate capabilities from connections used to transmit application data.
-While cryptographic context and endpoint capabilities need to be be known before encrypted
-application data can be sent, there is otherwise no technical constraint that the crypto handshake
-has to be performed on the same transport connection. This document discusses requirements on the
-cryptographic protocol to establish medium- to long-lived association that can be used by different
-transport protocols that implement different transport services.
+Due to the latency involved in connection setup and security handshakes, there is an increasing
+deployment of cryptographic session resumption mechanisms. While cryptographic context and
+endpoint capabilities need to be be known before encrypted application data can be sent, there is
+otherwise no technical constraint that the crypto handshake must be performed on the same transport
+connection. This document recommends a logical separation between the mechanism(s) used to negotiate
+capabilities and set up encryption context (handshake protocol), the application of encryption and
+authentication state to data (record protocol), and the associated transport connection(s).
 
 --- middle
 
@@ -45,7 +61,7 @@ transport protocols that implement different transport services.
 Secure transport protocols are generally composed of three pieces:
 
 1. A transport protocol to control the transfer of data.
-2. A record protocol to encode and, optionally, encrypt packets or datagrams.
+2. A record protocol to frame, encrypt and/or authenticate data
 3. A handshake protocol to negotiate cryptographic secrets.
 
 For ease of deployment and standardization, among other reasons, these constituents are often tightly
@@ -54,118 +70,78 @@ and vice versa. However, more recent transport protocols such as QUIC {{I-D.ietf
 these pieces separate. QUIC uses TLS to negotiate secrets, and *exports* those secrets
 to encrypt packets directly.
 
-~~~
-+---------------+                +---------------+
-|               +---------------->               |
-|   Transport   |                |   Handshake   |
-|               <----------------+               |
-+-+-----^-------+                +-----+-----^---+
-  |     |                              |     |
-  |     |                              |     |
-  |     |                              |     |
-  |     |        +---------------+     |     |
-  |     +--------+               <-----+     |
-  |              |    Record     |           |
-  +-------------->               +-----------+
-                 +---------------+
-~~~
-
-This separation is important, as new secure transport protocols increasingly rely on
+Separating these pieces is important, as new secure transport protocols increasingly rely on
 session resumption mechanisms where cryptographic context can be resumed to transmit
 application data with the first packet without delay for connection setup and negotiation.
 In the case where there is no cryptographic context available when an application
-expressed the wish to transmit data to a certain endpoint, the connection for cryptographic
-negotiation must be established first, immediately before the actual payload connection
-will be used. In this case, as today for approaches that integrate both the cryptographic
-handshake and the payload transmission, the application data transmission is delayed until
-the needed cryptographic context is available. If the handshake and transport components
-are separate, then the handshake protocol can use a separate transport connection to
-establish secrets without blocking the application's main transport connection. Moreover,
-this negotiation could be performed a priori and out of band before the application expresses
-a desire to send data. For example, an integrated or independent software
-system could maintain knowledge about endpoints that are likely to be communication points and set up
-or refresh state any time triggered by external events such as the start up of this system or periodically.
-
-This document discusses high-level interface requirements for separating the three
-primary features of a secure transport protocol.
+expresses the need to transmit data to a certain endpoint, it must first run the handshake protocol
+on a transport connection before being able to transmit application data. If the handshake protocol can
+be separated from the other components, then it can use another transport connection to
+establish secrets without blocking the application's main transport connection. This also opens up
+the possibility to run the handshake protocol well in advance of the need to send application data,
+to avoid unnecessary delays. For example, a client system could maintain a database of endpoints it
+is likely to communicate with, and establish keying material with a handshake protocol at periodic
+intervals to ensure fresh keys for new transport connections.
 
 {{I-D.moskowitz-sse}} proposes a similar approach. However while {{I-D.moskowitz-sse}} proposes
 a new protocol to negotiate and maintain long-term cryptographic sessions,
 this document relies on the use of existing protocols and only discusses requirements for the evolution
 of these protocols and exchange of information within one endpoint locally.
 
-# Minimal Transport Security Features
+# Terminology
 
-Transport functionality aside, there are several critical features common to most
-transport security protocols. Some of these features belong to the handshake
-piece of the protocol, whereas others belong to the record piece. We highlight
-these features in this section.
+- Transport Protocol: A protocol that can transport messages between two endpoints. This may represent the service offered to applications to allow them to send and receive data before encryption; and also represent the protocol that can transmit handshake data and encrypted records.
 
-## Mandatory Features
+- Handshake Protocol: A protocol that can validate and authenticate endpoints, encrypt and authenticate its negotiation, and ultimately generate keying material.
 
-### Handshake
+- Record Protocol: A protocol that can use keying material to transform messages. A record will generally add a frame around application data, and authenticate and/or encrypt the data.
 
-- Forward-secure segment encryption and authentication: Transit data must be protected with an
-authenticated encryption algorithm.
+- Keying Material: One or more pre-shared keys that can be used to encrypt and authenticate data, generated by a handshake protocol and used by a record protocol.
 
-- Private key interface or injection: Authentication based on public key signatures is commonplace for
-many transport security protocols.
+# Protocol Interfaces
 
-- Endpoint authentication: The endpoint (receiver) of a new connection must be authenticated before any
-data is sent to said party.
+In traditional models in which the protocols are not seperated out into the three elements of handshake,
+record, and transport protocols, there are two basic approaches to the interactions:
 
-- Source validation: Source validation must be provided to mitigate server-targeted DoS attacks. This can
-be done with puzzles or cookies.
+1. The transport protocol provides data to the security protocol and gets back an encrypted version of
+the data to be sent (handshake and record protocols are combined)
+2. The security protocol provides keying material to the transport protocol, and the transport protocol is
+responsible for encrypting data (transport and record protocols are combined)
 
-### Record
+By teasing apart all three portions as separate protocols, there end up being six interface points:
 
-- Pre-shared key support: A record protocol must be able to use a pre-shared key established
-out-of-band to encrypt individual messages, packets, or datagrams.
+~~~
+Application Data
+     |
+     |
++----V----------+      (1)       +---------------+
+|               +---------------->               |
+|   Transport   |                |   Handshake   |
+|               <----------------+               |
++-+-----^-------+      (2)       +-----+-----^---+
+  |     |                              |     |
+  |     |(6)                        (3)|     |
+  |     |                              |     |(4)
+  |     |        +---------------+     |     |
+  |     +--------+               <-----+     |
+  |(5)           |    Record     |           |
+  +-------------->               +-----------+
+                 +---------------+
+~~~
 
-## Optional Features
+1. A transport protocol depends upon a handshake protocol to establish keying material to protect application data being sent through the transport. The main interface it relies upon is starting the handshake, or ensuring that the material is ready.
+2. A handshake protocol depends upon a transport protocol in order to send and receive negotiation messages with the remote peer.
+3. A handshake protocol sends its keying material and cryptographic context to the record protocol to use
+4. A record protocol may signal state expiration events to a handshake protocol
+5. A transport protocol uses a record protocol to send and receive application data
+6. A record protocol uses a transport protocol to send and receive encrypted data
 
-### Handshake
+## Handshake-Transport Interface
 
-- Mutual authentication: Transport security protocols should allow both endpoints to authenticate one another if needed.
-
-- Application-layer feature negotiation: The type of application using a transport security protocol often requires
-features configured at the connection establishment layer, e.g., ALPN {{RFC7301}}. Moreover, application-layer features may often be used to
-offload the session to another server which can better handle the request. (The TLS SNI is one example of such a feature.)
-As such, transport security protocols should provide a generic mechanism to allow for such application-specific features
-and options to be configured or otherwise negotiated.
-
-- Configuration extensions: The protocol negotiation should be extensible with addition of new configuration options.
-
-- Session caching and management: Sessions should be cacheable to enable reuse and amortize the cost of performing
-session establishment handshakes.
-
-### Record
-
-- Connection mobility: Sessions should not be bound to a network connection (or 5 tuple). This allows cryptographic
-key material and other state information to be reused in the event of a connection change. Examples of this include
-a NAT rebinding that occurs without a client's knowledge.
-
-# Crypto-Transport Interface
-
-There are two basic approaches: either the transport protocol can provide data to the crypto engine
-and get back an encrypted version of the data to be sent, or the crypto protocol can provide keying
-material and inform the transport about the negotiated capabilities of the far end and the transport
-is responsible to perform the encryption set. In both cases, we seek to decouple the crypto layer
-from the transport layer. Thus, we require some interface between the transport
-and record protocols. Based on the minimum set of features described in the previous
-section, we now describe a minimal interface for these components.
-Here, a minimal interface defines the set of calls that an application interface must
-expose in order to generically use a particular feature. The mandatory interfaces are
-required to functionally use the protocols, while the optional interfaces allow the
-application to constrain the protocol or retrieve extra information.
-
-## Mandatory Interfaces
+Note that for the purposes of this interface description, it is assumed that the application is primarily interacting with the transport protocol, and thus the handshake protocol interacts with the application primarily through the abstraction of the transport protocol.
 
 - Start negotiation: The interface MUST provide an interface to start the protocol handshake for key negotiation, and
 have a way to be notified when the handshake is complete.
-
-- State changes: The interface MUST provide a way for the application to be notified of important state changes during
-the protocol execution and session lifetime, e.g., when the handshake begins, ends, or when a key update occurs.
 
 - Identity constraints: The interface MUST allow the application to constrain the identities that it will accept
 a connection to, such as the hostname it expects to be provided in certificate SAN.
@@ -173,18 +149,12 @@ a connection to, such as the hostname it expects to be provided in certificate S
 - Local identities: The interface MUST allow the local identity to be set via a raw private key or interface to one
 to perform cryptographic operations such as signing and decryption.
 
+- State changes: The interface SHOULD provide a way for the transport to be notified of important state changes during
+the protocol execution and session lifetime, e.g., when the handshake begins, ends, or when a key update occurs.
+
 - Validation: The interface MUST provide a way for the application to participate in the endpoint authentication and validation,
 which can either be specified as parameters to define how the peer's authentication can be validated, or when the protocol
 provides the authentication information for the application to inspect directly.
-
-- Key lifetime and rotation: The interface MUST provide a way for the application to set the key lifetime bounds in terms
-of *time* or *bytes encrypted* and, additionally, provide a way to forcefully update cryptographic session keys at will.
-The protocol should default to reasonable lifetimes barring any application input.
-
-- Key export: The interface MUST either provide a way to export keying material with well-defined cryptographic properties,
-e.g., "forward-secure" or "perfectly forward secure", or should provide an interface to keying material for cryptographic operations.
-
-## Optional Interfaces
 
 - Caching domain and lifetime: The application SHOULD be able to specify the instances of the protocol that can share
 cached keys, as well as the lifetime of cached resources.
@@ -194,6 +164,16 @@ cached keys, as well as the lifetime of cached resources.
 - The protocol SHOULD allow applications to specify negotiable cryptographic algorithm suites.
 
 - The protocol SHOULD expose the peer's identity information.
+
+## Handshake-Record Interface
+
+- Key export: The interface MUST provide a way to export keying material from a handshake protocol to a record protocol with well-defined cryptographic properties, e.g., "forward-secure" or "perfectly forward secure"
+
+- Key lifetime and rotation: The interface MUST provide a way for the handshake protocol to define key lifetime bounds in terms of *time* or *bytes encrypted* and, additionally, provide a way to forcefully update cryptographic session keys at will. The record protocol MUST be able to signal back to the handshake protocol that a lifetime has been reached and that rotation is required. These values SHOULD be configurable by the application.
+
+## Transport-Record Interface
+
+- Transform data: The interface MUST provide a way to send raw application data from the transport protocol to a record protocol to transform it based on the keying material. This data is then sent out by the transport protocol. The same applies for inbound data, in which inbound transport data is transformed by the record protocol into raw application data.
 
 # Existing Mappings
 
