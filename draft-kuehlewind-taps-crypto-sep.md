@@ -46,7 +46,16 @@ informative:
    I-D.ietf-quic-tls:
    I-D.moskowitz-sse:
    I-D.mglt-ipsecme-diet-esp:
-
+   TransportSecuritySurvey:
+    title: A Survey of Transport Security Protocols
+    url: https://datatracker.ietf.org/doc/draft-pauly-taps-transport-security/
+    authors:
+      -
+        ins: Tommy Pauly
+        org: Apple Inc., 1 Infinite Loop, Cupertino, California 95014, United States of America
+      -
+        ins: Christopher A. Wood
+        org: Apple Inc., 1 Infinite Loop, Cupertino, California 95014, United States of America
 
 --- abstract
 
@@ -72,7 +81,8 @@ For ease of deployment and standardization, among other reasons, these constitue
 coupled. For example, in TLS {{RFC5246}}, the handshake protocol depends on the record protocol,
 and vice versa. However, more recent transport protocols such as QUIC {{I-D.ietf-quic-tls}} keep
 these pieces separate. QUIC uses TLS to negotiate secrets, and *exports* those secrets
-to encrypt packets directly.
+to encrypt packets directly. See {{TransportSecuritySurvey}} for a survey of other
+secure transport protocols.
 
 Separating these pieces is important, as new secure transport protocols increasingly rely on
 session resumption mechanisms where cryptographic context can be resumed to transmit
