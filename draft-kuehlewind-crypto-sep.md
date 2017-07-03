@@ -145,7 +145,7 @@ Application Data
 
 Note that for the purposes of this interface description, it is assumed that the application is primarily interacting with the transport protocol, and thus the handshake protocol interacts with the application primarily through the abstraction of the transport protocol.
 
-- Start negotiation: The interface MUST provide an interface to start the protocol handshake for key negotiation, and
+- Start negotiation: The interface MUST provide an indication to start the protocol handshake for key negotiation, and
 have a way to be notified when the handshake is complete.
 
 - Identity constraints: The interface MUST allow the application to constrain the identities that it will accept
@@ -179,6 +179,10 @@ cached keys, as well as the lifetime of cached resources.
 ## Transport-Record Interface
 
 - Transform data: The interface MUST provide a way to send raw application data from the transport protocol to a record protocol to transform it based on the keying material. This data is then sent out by the transport protocol. The same applies for inbound data, in which inbound transport data is transformed by the record protocol into raw application data.
+
+- Maximum message size (opional): The transport may specify a maxium message size for the encrypted data if e.g. a datagram transport is used
+
+- Reliability: The transport MUST specify if messages are transmitted reliable and in order.
 
 # Existing Mappings
 
@@ -265,13 +269,18 @@ them as datagrams over a transport mechanism such, e.g., IP or UDP.
 
 One of the clearest benefits of separating the handshake protocol from the record protocol is that the handshake can be performed out-of-band from the application's data transfer. This should essentially reduce the number of RTTs required before being able to send data by the full length of the handshake (which is commonly 1 or 2 RTTs in the best cases for TLS 1.2 and IKEv2, potentially more if cookie challenges or extended authentication are required).
 
-To avoid long-lived transport connections that wouldn't be actively used, and thus would be vulnerable to timeouts on NATs or firewalls, an obvious approach to separating the handshake and record protocols is to use different transport connections for the early handshake and the data transfer. However, this approach of using separate connections will not always save RTTs if the handshake and data transfer are back-to-back. Each connection may require its own transport protocol handshake, and if the data transfer must wait for two transport protocols to establish before sending, then it will experience higher latency. Implementations SHOULD avoid this by either allowing the handshake and record protocols to share a single transport connection when the handshake protocol has not pre-fetched keys, or else ensuring that this scenario does not occur by always having the handshake protcol refresh the keys whenever old ones are near expiry.
+To avoid long-lived transport connections that wouldn't be actively used, and thus would be vulnerable to timeouts on NATs or firewalls, an obvious approach to separating the handshake and record protocols is to use different transport connections for the early handshake and the data transfer. However, this approach of using separate connections will not always save RTTs if the handshake and data transfer are back-to-back. Each connection may require its own transport protocol handshake, and if the data transfer must wait for two transport protocols to establish and the cryptographic handshake to be finished before sending, then it may experience higher latency. Implementations SHOULD avoid this by either allowing the handshake and record protocols to share a single transport connection or open two connections in paralell when the handshake protocol has not pre-fetched keys. Latency benefits, however, can even be achieved when ensuring that this scenario does not occur by always having the handshake protcol refresh the keys whenever old ones are near expiry.
 
 ## Protocol Flexibility
 
 Separation of the handshake, record, and transport protocols also allows for more flexible composition of protocols with one another. If a deployment uses a handshake protocol like TLS, which requires a stream-based transport protocol like TCP, separation of protocols will allow it to use the resulting keys for record protocols that run on datagram transport protocols like UDP.
 
 This flexibility may be useful for implementations that are optimizing for packet size by choosing minimal/lightweight record protocols, while being able to use commonly supported handshake protocols like TLS. One example here is the approach of a VPN tunnel that uses ESP or Diet-ESP {{I-D.mglt-ipsecme-diet-esp}} to encrypt datagrams, but uses TLS for establishing keys.
+
+## Protocol Capability Negotiation
+
+Enabling the use of a different transport protocol for the actual data transmission than for the cryptographic handshakes opens also the possible to negotiate protocol capabilities for the data transmission. For TLS usually TCP is the appropriate transport protocol to use which is also widely supported by endpoints. Allowing an endpoint to indicate the support of other, new transport protocols within the TCP connection that is used for the handshake, provides a dynamic transition path to enable easy deployment of new protocols.
+
 
 # IANA Considerations
 
