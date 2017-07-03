@@ -103,8 +103,8 @@ Table of Contents
    vice versa.  However, more recent transport protocols such as QUIC
    [I-D.ietf-quic-tls] keep these pieces separate.  QUIC uses TLS to
    negotiate secrets, and _exports_ those secrets to encrypt packets
-   directly.  See [TransportSecuritySurvey] for a survey of other secure
-   transport protocols.
+   directly.
+
 
 
 
@@ -585,9 +585,6 @@ Internet-Draft              crypto separation                  July 2017
               Negotiation Extension", RFC 7301, DOI 10.17487/RFC7301,
               July 2014, <http://www.rfc-editor.org/info/rfc7301>.
 
-   [TransportSecuritySurvey]
-              "A Survey of Transport Security Protocols", n.d..
-
 Authors' Addresses
 
    Mirja Kuehlewind
@@ -606,6 +603,9 @@ Authors' Addresses
    United States of America
 
    Email: tpauly@apple.com
+
+
+
 
 
 
