@@ -180,9 +180,9 @@ cached keys, as well as the lifetime of cached resources.
 
 - Transform data: The interface MUST provide a way to send raw application data from the transport protocol to a record protocol to transform it based on the keying material. This data is then sent out by the transport protocol. The same applies for inbound data, in which inbound transport data is transformed by the record protocol into raw application data.
 
-- Maximum message size (opional): The transport may specify a maxium message size for the encrypted data if e.g. a datagram transport is used
-
 - Reliability: The transport MUST specify if messages are transmitted reliable and in order.
+
+- Maximum message size (optional): The transport may specify a maximum message size for the encrypted data if e.g. a datagram transport is used
 
 # Existing Mappings
 
@@ -215,29 +215,30 @@ with a dependency on some underlying transport.
 ~~~
 
 - QUIC + TLS: The emerging QUIC standard is decomposed into the three pieces outlined in Section I {{I-D.ietf-quic-tls}}.
-TLS is used as the handshake protocol, a QUIC-specific record protocol encrypts and encapsulates
-frames, and the main QUIC component handles the transport of these frames.
+TLS is used as the handshake protocol running on a dedicated QUIC stream, a
+QUIC-specific record protocol encrypts and encapsulates stream frames, and
+the main QUIC component handles the transport of these frames.
 
 ~~~
     Application (configure and I/O)
       |     ^
-+-----|-----|-----------------------------------------+     
-|     |     |           --QUIC--                      |
-|     |     |                                         |
-|  +--V-----+---+             +--------------+        |   +----------------+
-|  |    QUIC    |------------>|      TLS     +------------>                |
-|  | (transport)|             |  (handshake) |        |   |    Transport   |
-|  |            <-------------+              <------------+                |
-|  ++---^--+--^-+             +--^-------+---+        |   +----------------+
-|   |   |  |  |                  |       |            |
-|   |   |  |  |                  |       |            |
-|   |   |  |  |  +V---------+-+  |       |            |
-|   |   |  |  +-->   Packet   +--+       |            |
-|   |   |  |     | Protection |          |            |
-|   |   |  +-----+  (record)  <----------+            |
-|   |   |        +------------+                        |
-|   |   |                                             |
-+---|---|----------+----------------------------------+
++-----|-----|------------------------------------+     
+|     |     |      --QUIC--                      |
+|     |     |                                    |
+|  +--V-----+---+             +--------------+   |   
+|  |    QUIC    |------------>|      TLS     |   |
+|  | (transport)|             |  (handshake) |   |   
+|  |            <-------------+              |   |
+|  ++---^--+--^-+             +--^-------+---+   |
+|   |   |  |  |                  |       |       |
+|   |   |  |  |                  |       |       |
+|   |   |  |  |  +V---------+-+  |       |       |
+|   |   |  |  +-->   Packet   +--+       |       |
+|   |   |  |     | Protection |          |       |
+|   |   |  +-----+  (record)  <----------+       |
+|   |   |        +------------+                  |
+|   |   |                                        |
++---|---|----------+-----------------------------+
     |   |           
 +---V---+--------+
 |    Transport   |
@@ -269,7 +270,7 @@ them as datagrams over a transport mechanism such, e.g., IP or UDP.
 
 One of the clearest benefits of separating the handshake protocol from the record protocol is that the handshake can be performed out-of-band from the application's data transfer. This should essentially reduce the number of RTTs required before being able to send data by the full length of the handshake (which is commonly 1 or 2 RTTs in the best cases for TLS 1.2 and IKEv2, potentially more if cookie challenges or extended authentication are required).
 
-To avoid long-lived transport connections that wouldn't be actively used, and thus would be vulnerable to timeouts on NATs or firewalls, an obvious approach to separating the handshake and record protocols is to use different transport connections for the early handshake and the data transfer. However, this approach of using separate connections will not always save RTTs if the handshake and data transfer are back-to-back. Each connection may require its own transport protocol handshake, and if the data transfer must wait for two transport protocols to establish and the cryptographic handshake to be finished before sending, then it may experience higher latency. Implementations SHOULD avoid this by either allowing the handshake and record protocols to share a single transport connection or open two connections in paralell when the handshake protocol has not pre-fetched keys. Latency benefits, however, can even be achieved when ensuring that this scenario does not occur by always having the handshake protcol refresh the keys whenever old ones are near expiry.
+To avoid long-lived transport connections that wouldn't be actively used, and thus would be vulnerable to timeouts on NATs or firewalls, an obvious approach to separating the handshake and record protocols is to use different transport connections for the early handshake and the data transfer. However, this approach of using separate connections will not always save RTTs if the handshake and data transfer are back-to-back. Each connection may require its own transport protocol handshake, and if the data transfer must wait for two transport protocols to establish and the cryptographic handshake to be finished before sending, then it may experience higher latency. Implementations SHOULD avoid this by either allowing the handshake and record protocols to share a single transport connection or open two connections in parallel when the handshake protocol has not pre-fetched keys. Latency benefits, however, can even be achieved when ensuring that this scenario does not occur by always having the handshake protocol refresh the keys whenever old ones are near expiry.
 
 ## Protocol Flexibility
 
@@ -279,8 +280,9 @@ This flexibility may be useful for implementations that are optimizing for packe
 
 ## Protocol Capability Negotiation
 
-Enabling the use of a different transport protocol for the actual data transmission than for the cryptographic handshakes opens also the possible to negotiate protocol capabilities for the data transmission. For TLS usually TCP is the appropriate transport protocol to use which is also widely supported by endpoints. Allowing an endpoint to indicate the support of other, new transport protocols within the TCP connection that is used for the handshake, provides a dynamic transition path to enable easy deployment of new protocols.
+Enabling the use of a different transport protocol for the actual data transmission than for the cryptographic handshakes opens also the possibility to negotiate protocol capabilities for the data transmission. For TLS, usually TCP is the appropriate transport protocol to use, as it is also widely supported by endpoints. Allowing an endpoint to indicate the support of other, new transport protocols within the TCP connection that is used for the handshake, provides a dynamic transition path to enable easy deployment of new protocols.
 
+<!-- CAW: a hint to TLPN could be dropped here -->
 
 # IANA Considerations
 
