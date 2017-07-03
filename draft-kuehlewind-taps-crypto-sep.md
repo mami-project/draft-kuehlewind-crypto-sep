@@ -1,7 +1,7 @@
 ---
 title: Separating Crypto Negotiation and Communication
 abbrev: crypto separation
-docname: draft-kuehlewind-crypto-sep-latest
+docname: draft-kuehlewind-taps-crypto-sep-latest
 date:
 category: info
 
