@@ -49,12 +49,14 @@ informative:
 
 --- abstract
 
+<!-- TODO(caw): we might consider rewriting this abstract; it no longer applies. -->
+
 Due to the latency involved in connection setup and security handshakes, there is an increasing
 deployment of cryptographic session resumption mechanisms. While cryptographic context and
 endpoint capabilities need to be be known before encrypted application data can be sent, there is
-otherwise no technical constraint that the crypto handshake must be performed on the same transport
-connection. This document recommends a logical separation between the mechanism(s) used to negotiate
-capabilities and set up encryption context (handshake protocol), the application of encryption and
+otherwise no technical constraint that the cryptographic handshake must be performed on the same
+transport connection. This document recommends a logical separation between the mechanism(s) used to negotiate
+capabilities and set up encryption context (control protocol), the application of encryption and
 authentication state to data (record protocol), and the associated transport connection(s).
 
 --- middle
@@ -65,25 +67,26 @@ Secure transport protocols are generally composed of three pieces:
 
 1. A transport protocol to control the transfer of data.
 2. A record protocol to frame, encrypt and/or authenticate data
-3. A handshake protocol to negotiate cryptographic secrets.
+3. A control protocol to perform cryptographic handshakes and negotiate shared secrets. (In the context
+of TLS, the control protocol is called the handshake protocol.)
 
 For ease of deployment and standardization, among other reasons, these constituents are often tightly
-coupled. For example, in TLS {{RFC5246}}, the handshake protocol depends on the record protocol,
+coupled. For example, in TLS {{RFC5246}}, the control protocol depends on the record protocol,
 and vice versa. However, more recent transport protocols such as QUIC {{I-D.ietf-quic-tls}} keep
 these pieces separate. QUIC uses TLS to negotiate secrets, and *exports* those secrets
-to encrypt packets directly. 
+to encrypt packets directly.
 
 Separating these pieces is important, as new secure transport protocols increasingly rely on
 session resumption mechanisms where cryptographic context can be resumed to transmit
 application data with the first packet without delay for connection setup and negotiation.
 In the case where there is no cryptographic context available when an application
-expresses the need to transmit data to a certain endpoint, it must first run the handshake protocol
-on a transport connection before being able to transmit application data. If the handshake protocol can
+expresses the need to transmit data to a certain endpoint, it must first run the control protocol
+on a transport connection before being able to transmit application data. If the control protocol can
 be separated from the other components, then it can use another transport connection to
 establish secrets without blocking the application's main transport connection. This also opens up
-the possibility to run the handshake protocol well in advance of the need to send application data,
+the possibility to run the control protocol well in advance of the need to send application data,
 to avoid unnecessary delays. For example, a client system could maintain a database of endpoints it
-is likely to communicate with, and establish keying material with a handshake protocol at periodic
+is likely to communicate with, and establish keying material with a control protocol at periodic
 intervals to ensure fresh keys for new transport connections.
 
 {{I-D.moskowitz-sse}} proposes a similar approach. However while {{I-D.moskowitz-sse}} proposes
@@ -93,23 +96,28 @@ of these protocols and exchange of information within one endpoint locally.
 
 # Terminology
 
-- Transport Protocol: A protocol that can transport messages between two endpoints. This may represent the service offered to applications to allow them to send and receive data before encryption; and also represent the protocol that can transmit handshake data and encrypted records.
+- Transport Protocol: A protocol that can transport messages between two endpoints. This may represent
+the service offered to applications to allow them to send and receive data before encryption; and also
+represent the protocol that can transmit control data and encrypted records.
 
-- Handshake Protocol: A protocol that can validate and authenticate endpoints, encrypt and authenticate its negotiation, and ultimately generate keying material.
+- Control Protocol: A protocol that performs a cryptographic handshake and, in addition, can validate and
+authenticate endpoints, encrypt and authenticate its negotiation, and ultimately generate keying material.
 
-- Record Protocol: A protocol that can use keying material to transform messages. A record will generally add a frame around application data, and authenticate and/or encrypt the data.
+- Record Protocol: A protocol that can use keying material to transform messages. A record will generally
+add a frame around application data, and authenticate and/or encrypt the data.
 
-- Keying Material: One or more pre-shared keys that can be used to encrypt and authenticate data, generated by a handshake protocol and used by a record protocol.
+- Keying Material: A shared secret from which pre-shared keys can be derived and subsequently used to
+encrypt and authenticate data, generated by a control protocol and used by a record protocol.
 
 # Protocol Interfaces
 
-In traditional models in which the protocols are not separated out into the three elements of handshake,
+In traditional models in which the protocols are not separated out into the three elements of control,
 record, and transport protocols, there are two basic approaches to the interactions:
 
 1. The transport protocol provides data to the security protocol and gets back an encrypted version of
-the data to be sent (handshake and record protocols are combined)
+the data to be sent (control and record protocols are combined).
 2. The security protocol provides keying material to the transport protocol, and the transport protocol is
-responsible for encrypting data (transport and record protocols are combined)
+responsible for encrypting data (transport and record protocols are combined).
 
 By teasing apart all three portions as separate protocols, there end up being six interface points:
 
@@ -119,7 +127,7 @@ Application Data
      |    |
 +----V----+-----+      (1)       +---------------+
 |               +---------------->               |
-|   Transport   |                |   Handshake   |
+|   Transport   |                |     Control   |
 |               <----------------+               |
 +-+-----^-------+      (2)       +-----+-----^---+
   |     |                              |     |
@@ -133,16 +141,19 @@ Application Data
 ~~~
 {: #fig-dependencies title="Secure Transport Protocol Components and Interactions"}
 
-1. A transport protocol depends upon a handshake protocol to establish keying material to protect application data being sent through the transport. The main interface it relies upon is starting the handshake, or ensuring that the material is ready.
-2. A handshake protocol depends upon a transport protocol in order to send and receive negotiation messages with the remote peer.
-3. A handshake protocol sends its keying material and cryptographic context to the record protocol to use
-4. A record protocol may signal state expiration events to a handshake protocol
-5. A transport protocol uses a record protocol to send and receive application data
-6. A record protocol uses a transport protocol to send and receive encrypted data
+1. A transport protocol depends upon a control protocol to establish keying material to protect application data being sent through the transport.
+The main interface it relies upon is starting the control channel, or handshake, or ensuring that the material is ready.
+2. A control protocol depends upon a transport protocol in order to send and receive negotiation messages with the remote peer.
+3. A control protocol sends its keying material and cryptographic context to the record protocol to use.
+4. A record protocol may signal state expiration events to a control protocol.
+5. A transport protocol uses a record protocol to send and receive application data.
+6. A record protocol uses a transport protocol to send and receive encrypted data.
 
-## Handshake-Transport Interface
+## Control-Transport Interface
 
-Note that for the purposes of this interface description, it is assumed that the application is primarily interacting with the transport protocol, and thus the handshake protocol interacts with the application primarily through the abstraction of the transport protocol.
+Note that for the purposes of this interface description, it is assumed that the application is primarily interacting
+with the transport protocol, and thus the control protocol interacts with the application primarily through the abstraction
+of the transport protocol.
 
 - Start negotiation: The interface MUST provide an indication to start the protocol handshake for key negotiation, and
 have a way to be notified when the handshake is complete.
@@ -169,27 +180,36 @@ cached keys, as well as the lifetime of cached resources.
 
 - The protocol SHOULD expose the peer's identity information.
 
-## Handshake-Record Interface
+## Control-Record Interface
 
-- Key export: The interface MUST provide a way to export keying material from a handshake protocol to a record protocol with well-defined cryptographic properties, e.g., "forward-secure" or "perfectly forward secure"
+- Key export: The interface MUST provide a way to export keying material from a control protocol to
+a record protocol with well-defined cryptographic properties, e.g., "forward-secure."
 
-- Key lifetime and rotation: The interface MUST provide a way for the handshake protocol to define key lifetime bounds in terms of *time* or *bytes encrypted* and, additionally, provide a way to forcefully update cryptographic session keys at will. The record protocol MUST be able to signal back to the handshake protocol that a lifetime has been reached and that rotation is required. These values SHOULD be configurable by the application.
+- Key lifetime and rotation: The interface MUST provide a way for the control protocol to define key
+lifetime bounds in terms of *time* or *bytes encrypted* and, additionally, provide a way to forcefully
+update cryptographic session keys at will. The record protocol MUST be able to signal back to the control
+protocol that a lifetime has been reached and that rotation is required. These values SHOULD be configurable
+by the application.
 
 ## Transport-Record Interface
 
-- Transform data: The interface MUST provide a way to send raw application data from the transport protocol to a record protocol to transform it based on the keying material. This data is then sent out by the transport protocol. The same applies for inbound data, in which inbound transport data is transformed by the record protocol into raw application data.
+- Transform data: The interface MUST provide a way to send raw application data from the transport protocol
+to a record protocol to transform it based on the keying material. This data is then sent out by the
+transport protocol. The same applies for inbound data, in which inbound transport data is transformed
+by the record protocol into raw application data.
 
 - Reliability: The transport MUST specify if messages are transmitted reliable and in order.
 
-- Maximum message size (optional): The transport may specify a maximum message size for the encrypted data if e.g. a datagram transport is used
+- Maximum message size (optional): The transport may specify a maximum message size for the encrypted
+data if e.g. a datagram transport is used
 
 # Existing Mappings
 
 In this section we document existing mappings between common transport security
 protocols and the three components described in Section I.
 
-- TLS/DTLS: TLS {{RFC5246}} and DTLS {{RFC6347}} is a combination of a handshake and record protocol,
-with a dependency on some underlying transport.
+- TLS/DTLS: TLS {{RFC5246}} and DTLS {{RFC6347}} is a combination of a control (handshake)
+and record protocol, with a dependency on some underlying transport.
 
 ~~~
               Application (configure and I/O)
@@ -202,8 +222,8 @@ with a dependency on some underlying transport.
 |          |    |       --TLS--                      |
 |     +----V----+-----+         +---------------+    |
 |     |               +--------->               |    |
-|     |   Handshake   |         |     Record    |    |
-|     |               <---------+               |    |
+|     |    Control    |         |     Record    |    |
+|     |  (Handshake)  <---------+               |    |
 |     +---------------+         +----+------^---+    |
 |                                    |      |        |
 +------------------------------------|------|--------+
@@ -214,7 +234,7 @@ with a dependency on some underlying transport.
 ~~~
 
 - QUIC + TLS: The emerging QUIC standard is decomposed into the three pieces outlined in Section I {{I-D.ietf-quic-tls}}.
-TLS is used as the handshake protocol running on a dedicated QUIC stream, a
+TLS is used as the control protocol running on a dedicated QUIC stream, a
 QUIC-specific record protocol encrypts and encapsulates stream frames, and
 the main QUIC component handles the transport of these frames.
 
@@ -226,7 +246,7 @@ the main QUIC component handles the transport of these frames.
 |     |     |                                    |
 |  +--V-----+---+             +--------------+   |   
 |  |    QUIC    |------------>|      TLS     |   |
-|  | (transport)|             |  (handshake) |   |   
+|  | (transport)|             |   (control)  |   |   
 |  |            <-------------+              |   |
 |  ++---^--+--^-+             +--^-------+---+   |
 |   |   |  |  |                  |       |       |
@@ -244,7 +264,7 @@ the main QUIC component handles the transport of these frames.
 +----------------+
 ~~~
 
-- IKEv2 + ESP: IKEv2 {{RFC7296}} is a handshake protocol commonly used to establish keys for
+- IKEv2 + ESP: IKEv2 {{RFC7296}} is a control protocol commonly used to establish keys for
 use in IPsec (often VPN) deployments. It is already a distinct protocol from its commonly paired
 record protocol, which is ESP {{RFC4303}}. ESP encrypts and authenticates IP datagrams, and sends
 them as datagrams over a transport mechanism such, e.g., IP or UDP.
@@ -267,19 +287,44 @@ them as datagrams over a transport mechanism such, e.g., IP or UDP.
 
 ## Reducing Connection Latency
 
-One of the clearest benefits of separating the handshake protocol from the record protocol is that the handshake can be performed out-of-band from the application's data transfer. This should essentially reduce the number of RTTs required before being able to send data by the full length of the handshake (which is commonly 1 or 2 RTTs in the best cases for TLS 1.2 and IKEv2, potentially more if cookie challenges or extended authentication are required).
+One of the clearest benefits of separating the control protocol from the record protocol is that the
+cryptographic handshake can be performed out-of-band from the application's data transfer. This should
+essentially reduce the number of RTTs required before being able to send data by the full length of the
+handshake (which is commonly 1 or 2 RTTs in the best cases for TLS 1.2 and IKEv2, potentially more if
+cookie challenges or extended authentication are required).
 
-To avoid long-lived transport connections that wouldn't be actively used, and thus would be vulnerable to timeouts on NATs or firewalls, an obvious approach to separating the handshake and record protocols is to use different transport connections for the early handshake and the data transfer. However, this approach of using separate connections will not always save RTTs if the handshake and data transfer are back-to-back. Each connection may require its own transport protocol handshake, and if the data transfer must wait for two transport protocols to establish and the cryptographic handshake to be finished before sending, then it may experience higher latency. Implementations SHOULD avoid this by either allowing the handshake and record protocols to share a single transport connection or open two connections in parallel when the handshake protocol has not pre-fetched keys. Latency benefits, however, can even be achieved when ensuring that this scenario does not occur by always having the handshake protocol refresh the keys whenever old ones are near expiry.
+To avoid long-lived transport connections that wouldn't be actively used, and thus would be vulnerable
+to timeouts on NATs or firewalls, an obvious approach to separating the control and record protocols
+is to use different transport connections for the early handshake and the data transfer. However, this
+approach of using separate connections will not always save RTTs if the cryptographic handshake and data transfer are
+back-to-back. Each connection may require its own transport protocol handshake, and if the data transfer
+must wait for two transport protocols to establish and the cryptographic handshake to be finished before
+sending, then it may experience higher latency. Implementations SHOULD avoid this by either allowing the
+control and record protocols to share a single transport connection or open two connections in parallel
+when the control protocol has not pre-fetched keys. Latency benefits, however, can even be achieved
+when ensuring that this scenario does not occur by always having the control protocol refresh the keys
+whenever old ones are near expiry.
 
 ## Protocol Flexibility
 
-Separation of the handshake, record, and transport protocols also allows for more flexible composition of protocols with one another. If a deployment uses a handshake protocol like TLS, which requires a stream-based transport protocol like TCP, separation of protocols will allow it to use the resulting keys for record protocols that run on datagram transport protocols like UDP.
+Separation of the control, record, and transport protocols also allows for more flexible composition of
+protocols with one another. If a deployment uses a control protocol like TLS, which requires a stream-based
+transport protocol like TCP, separation of protocols will allow it to use the resulting keys for record
+protocols that run on datagram transport protocols like UDP.
 
-This flexibility may be useful for implementations that are optimizing for packet size by choosing minimal/lightweight record protocols, while being able to use commonly supported handshake protocols like TLS. One example here is the approach of a VPN tunnel that uses ESP or Diet-ESP {{I-D.mglt-ipsecme-diet-esp}} to encrypt datagrams, but uses TLS for establishing keys.
+This flexibility may be useful for implementations that are optimizing for packet size by choosing
+minimal/lightweight record protocols, while being able to use commonly supported control protocols
+like TLS. One example here is the approach of a VPN tunnel that uses ESP or Diet-ESP {{I-D.mglt-ipsecme-diet-esp}}
+to encrypt datagrams, but uses TLS for establishing keys.
 
 ## Protocol Capability Negotiation
 
-Enabling the use of a different transport protocol for the actual data transmission than for the cryptographic handshakes opens also the possibility to negotiate protocol capabilities for the data transmission. For TLS, usually TCP is the appropriate transport protocol to use, as it is also widely supported by endpoints. Allowing an endpoint to indicate the support of other, new transport protocols within the TCP connection that is used for the handshake, provides a dynamic transition path to enable easy deployment of new protocols.
+Enabling the use of a different transport protocol for the actual data transmission than for the
+cryptographic handshakes opens also the possibility to negotiate protocol capabilities for the data
+transmission. For TLS, usually TCP is the appropriate transport protocol to use, as it is also widely
+supported by endpoints. Allowing an endpoint to indicate the support of other, new transport protocols
+within the TCP connection that is used for the cryptographic handshake, provides a dynamic
+transition path to enable easy deployment of new protocols.
 
 <!-- CAW: a hint to TLPN could be dropped here -->
 
@@ -299,3 +344,4 @@ This work is partially supported by the European Commission under Horizon 2020
 grant agreement no. 688421 Measurement and Architecture for a Middleboxed
 Internet (MAMI), and by the Swiss State Secretariat for Education, Research, and
 Innovation under contract no. 15.0268. This support does not imply endorsement.
+Thanks to Brian Trammell for reviewing this draft.
