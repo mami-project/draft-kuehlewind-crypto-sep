@@ -49,8 +49,6 @@ informative:
 
 --- abstract
 
-<!-- TODO(caw): we might consider rewriting this abstract; it no longer applies. -->
-
 Due to the latency involved in connection setup and security handshakes, there is an increasing
 deployment of cryptographic session resumption mechanisms. While cryptographic context and
 endpoint capabilities need to be be known before encrypted application data can be sent, there is
@@ -65,10 +63,11 @@ authentication state to data (record protocol), and the associated transport con
 
 Secure transport protocols are generally composed of three pieces:
 
-1. A transport protocol to control the transfer of data.
+1. A transport protocol to handle the transfer of data.
 2. A record protocol to frame, encrypt and/or authenticate data
-3. A control protocol to perform cryptographic handshakes and negotiate shared secrets. (In the context
-of TLS, the control protocol is called the handshake protocol.)
+3. A control protocol to perform cryptographic handshakes to negotiate shared secrets and,
+afterwards, update those shared secrets if needed. (In the context of TLS, the control protocol 
+is called the handshake protocol.)
 
 For ease of deployment and standardization, among other reasons, these constituents are often tightly
 coupled. For example, in TLS {{RFC5246}}, the control protocol depends on the record protocol,
