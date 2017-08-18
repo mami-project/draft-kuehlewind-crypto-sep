@@ -56,7 +56,8 @@ deployment of cryptographic session resumption mechanisms. While cryptographic c
 endpoint capabilities need to be be known before encrypted application data can be sent, there is
 otherwise no technical constraint that the cryptographic handshake must be performed on the same
 transport connection. This document recommends a logical separation between the mechanism(s) used to negotiate
-capabilities and set up encryption context (control protocol), the application of encryption and
+capabilities and set up the initial encryption context as well as maintain this context (control protocol), 
+the application of encryption and
 authentication state to data (record protocol), and the associated transport connection(s).
 
 --- middle
@@ -67,8 +68,9 @@ Secure transport protocols are generally composed of three pieces:
 
 1. A transport protocol to control the transfer of data.
 2. A record protocol to frame, encrypt and/or authenticate data
-3. A control protocol to perform cryptographic handshakes and negotiate shared secrets. (In the context
-of TLS, the control protocol is called the handshake protocol.)
+3. A control protocol to perform cryptographic handshakes, negotiate shared secrets,
+and maintain state during the lifetime of cryptographic session inclusing session resumption
+and key refreshment. (In the context of TLS, the control protocol is called the handshake protocol.)
 
 For ease of deployment and standardization, among other reasons, these constituents are often tightly
 coupled. For example, in TLS {{RFC5246}}, the control protocol depends on the record protocol,
