@@ -49,14 +49,14 @@ informative:
 
 --- abstract
 
-Due to the latency involved in connection setup and security handshakes, there is an increasing
-deployment of cryptographic session resumption mechanisms. While cryptographic context and
-endpoint capabilities need to be be known before encrypted application data can be sent, there is
-otherwise no technical constraint that the cryptographic handshake must be performed on the same
-transport connection. This document recommends a logical separation between the mechanism(s) used to negotiate
-capabilities and set up the initial encryption context as well as maintain this context (control protocol), 
-the application of encryption and
-authentication state to data (record protocol), and the associated transport connection(s).
+Secure transport protocols often consist of three logically distinct components: transport, 
+control (handshake), and record protection. Typically, such a protocol contains a single 
+module that is responsible for all three functions. However, in many cases, this coupling is unnecessary.
+For example, while cryptographic context and endpoint capabilities need to be known before 
+encrypted application data can be sent on a specific transport connection, there is otherwise no technical constraint that a cryptographic 
+handshake must be performed on said connection. This document recommends a logical separation 
+between transport, control, and record components of secure transport protocols. We compare existing protocols 
+such as Transport Layer Security, QUIC, and IKEv2+ESP in the context of this logical separation.
 
 --- middle
 
@@ -67,14 +67,14 @@ Secure transport protocols are generally composed of three pieces:
 1. A transport protocol to handle the transfer of data.
 2. A record protocol to frame, encrypt and/or authenticate data
 3. A control protocol to perform cryptographic handshakes, negotiate shared secrets,
-and maintain state during the lifetime of cryptographic session inclusing session resumption
+and maintain state during the lifetime of cryptographic session including session resumption
 and key refreshment. (In the context of TLS, the control protocol is called the handshake protocol.)
 
 For ease of deployment and standardization, among other reasons, these constituents are often tightly
 coupled. For example, in TLS {{RFC5246}}, the control protocol depends on the record protocol,
 and vice versa. However, more recent transport protocols such as QUIC {{I-D.ietf-quic-tls}} keep
-these pieces separate. QUIC uses TLS to negotiate secrets, and *exports* those secrets
-to encrypt packets directly.
+these pieces separate. For example, QUIC uses TLS to negotiate secrets, and exports those secrets
+to encrypt packets independent of TLS.
 
 Separating these pieces is important, as new secure transport protocols increasingly rely on
 session resumption mechanisms where cryptographic context can be resumed to transmit
