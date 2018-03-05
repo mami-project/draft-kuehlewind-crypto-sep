@@ -5,9 +5,9 @@
 Network Working Group                                      M. Kuehlewind
 Internet-Draft                                                ETH Zurich
 Intended status: Informational                                  T. Pauly
-Expires: September 5, 2018                                       C. Wood
+Expires: September 6, 2018                                       C. Wood
                                                               Apple Inc.
-                                                          March 04, 2018
+                                                          March 05, 2018
 
 
             Separating Crypto Negotiation and Communication
@@ -44,7 +44,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on September 5, 2018.
+   This Internet-Draft will expire on September 6, 2018.
 
 
 
@@ -53,7 +53,7 @@ Status of This Memo
 
 
 
-Kuehlewind, et al.      Expires September 5, 2018               [Page 1]
+Kuehlewind, et al.      Expires September 6, 2018               [Page 1]
 
 Internet-Draft              crypto separation                 March 2018
 
@@ -109,7 +109,7 @@ Table of Contents
 
 
 
-Kuehlewind, et al.      Expires September 5, 2018               [Page 2]
+Kuehlewind, et al.      Expires September 6, 2018               [Page 2]
 
 Internet-Draft              crypto separation                 March 2018
 
@@ -165,7 +165,7 @@ Internet-Draft              crypto separation                 March 2018
 
 
 
-Kuehlewind, et al.      Expires September 5, 2018               [Page 3]
+Kuehlewind, et al.      Expires September 6, 2018               [Page 3]
 
 Internet-Draft              crypto separation                 March 2018
 
@@ -221,7 +221,7 @@ Internet-Draft              crypto separation                 March 2018
 
 
 
-Kuehlewind, et al.      Expires September 5, 2018               [Page 4]
+Kuehlewind, et al.      Expires September 6, 2018               [Page 4]
 
 Internet-Draft              crypto separation                 March 2018
 
@@ -277,7 +277,7 @@ Internet-Draft              crypto separation                 March 2018
 
 
 
-Kuehlewind, et al.      Expires September 5, 2018               [Page 5]
+Kuehlewind, et al.      Expires September 6, 2018               [Page 5]
 
 Internet-Draft              crypto separation                 March 2018
 
@@ -333,7 +333,7 @@ Internet-Draft              crypto separation                 March 2018
 
 
 
-Kuehlewind, et al.      Expires September 5, 2018               [Page 6]
+Kuehlewind, et al.      Expires September 6, 2018               [Page 6]
 
 Internet-Draft              crypto separation                 March 2018
 
@@ -389,7 +389,7 @@ Internet-Draft              crypto separation                 March 2018
 
 
 
-Kuehlewind, et al.      Expires September 5, 2018               [Page 7]
+Kuehlewind, et al.      Expires September 6, 2018               [Page 7]
 
 Internet-Draft              crypto separation                 March 2018
 
@@ -445,7 +445,7 @@ Internet-Draft              crypto separation                 March 2018
 
 
 
-Kuehlewind, et al.      Expires September 5, 2018               [Page 8]
+Kuehlewind, et al.      Expires September 6, 2018               [Page 8]
 
 Internet-Draft              crypto separation                 March 2018
 
@@ -501,7 +501,7 @@ Internet-Draft              crypto separation                 March 2018
 
 
 
-Kuehlewind, et al.      Expires September 5, 2018               [Page 9]
+Kuehlewind, et al.      Expires September 6, 2018               [Page 9]
 
 Internet-Draft              crypto separation                 March 2018
 
@@ -520,20 +520,21 @@ Internet-Draft              crypto separation                 March 2018
 
 6.  Transport Service Architecture Integration
 
-   Pauly et al.  [I-D.pauly-taps-arch] describe the architecture of a
-   generic Transport Services system.  Such systems and their APIs
-   provide applications with the ability to establish connections for
-   sending and receiving data.  The lifetime of a connection is
-   comprised of a pre-establishment configuration stage, established
-   (connected) stage, and terminated stage.  Pre-establishment
-   properties configured include: Local and Remote Endpoint, protocol
-   selection properties, and specific protocol options.  Applications
-   configure security protocols during "preconnection" using the passive
-   interfaces described in Section Section 3.1.  Active control
-   interfaces are exercised during connection establishment, i.e., from
-   pre-establishment to established states.  Applications can query
-   connection metadata or state information, e.g., peer identity
-   information, during and after connection establishment.
+   The Transport Services Architecture ([I-D.pauly-taps-arch]) describes
+   a system that can provide transport security functionality behind a
+   common interface.  Such systems and their APIs provide applications
+   with the ability to establish connections for sending and receiving
+   data.  The lifetime of a connection is comprised of a pre-
+   establishment configuration stage, established (connected) stage, and
+   terminated stage.  Pre-establishment properties configured include:
+   Local and Remote Endpoint, protocol selection properties, and
+   specific protocol options.  Applications configure security protocols
+   during pre-establishment using the passive interfaces described in
+   Section Section 3.1.  Active control interfaces are exercised during
+   connection establishment, i.e., from pre-establishment to established
+   states.  Applications can query connection metadata or state
+   information, e.g., peer identity information, during and after
+   connection establishment.
 
 7.  IANA Considerations
 
@@ -552,22 +553,24 @@ Internet-Draft              crypto separation                 March 2018
    Horizon 2020 grant agreement no. 688421 Measurement and Architecture
    for a Middleboxed Internet (MAMI), and by the Swiss State Secretariat
    for Education, Research, and Innovation under contract no. 15.0268.
-   This support does not imply endorsement.  Thanks to Brian Trammell
-   for reviewing this draft.
 
 
 
-Kuehlewind, et al.      Expires September 5, 2018              [Page 10]
+
+Kuehlewind, et al.      Expires September 6, 2018              [Page 10]
 
 Internet-Draft              crypto separation                 March 2018
 
+
+   This support does not imply endorsement.  Thanks to Brian Trammell
+   for reviewing this draft.
 
 10.  Informative References
 
    [I-D.ietf-quic-tls]
               Thomson, M. and S. Turner, "Using Transport Layer Security
-              (TLS) to Secure QUIC", draft-ietf-quic-tls-09 (work in
-              progress), January 2018.
+              (TLS) to Secure QUIC", draft-ietf-quic-tls-10 (work in
+              progress), March 2018.
 
    [I-D.mglt-ipsecme-diet-esp]
               Migault, D., Guggemos, T., and C. Bormann, "ESP Header
@@ -610,10 +613,7 @@ Internet-Draft              crypto separation                 March 2018
 
 
 
-
-
-
-Kuehlewind, et al.      Expires September 5, 2018              [Page 11]
+Kuehlewind, et al.      Expires September 6, 2018              [Page 11]
 
 Internet-Draft              crypto separation                 March 2018
 
@@ -669,4 +669,4 @@ Authors' Addresses
 
 
 
-Kuehlewind, et al.      Expires September 5, 2018              [Page 12]
+Kuehlewind, et al.      Expires September 6, 2018              [Page 12]

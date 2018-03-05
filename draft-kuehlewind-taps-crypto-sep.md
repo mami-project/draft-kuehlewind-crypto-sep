@@ -341,13 +341,14 @@ transition path to enable easy deployment of new protocols.
 
 # Transport Service Architecture Integration
 
-Pauly et al. {{I-D.pauly-taps-arch}} describe the architecture of a generic
-Transport Services system. Such systems and their APIs provide applications with
+The Transport Services Architecture ({{I-D.pauly-taps-arch}}) describes a system 
+that can provide transport security functionality behind a common interface.
+Such systems and their APIs provide applications with
 the ability to establish connections for sending and receiving data. The lifetime
 of a connection is comprised of a pre-establishment configuration stage, established
 (connected) stage, and terminated stage. Pre-establishment properties configured
 include: Local and Remote Endpoint, protocol selection properties, and specific
-protocol options. Applications configure security protocols during "preconnection"
+protocol options. Applications configure security protocols during pre-establishment
 using the passive interfaces described in Section {{control-transport}}. Active
 control interfaces are exercised during connection establishment, i.e., from pre-establishment
 to established states. Applications can query connection metadata or state information,
