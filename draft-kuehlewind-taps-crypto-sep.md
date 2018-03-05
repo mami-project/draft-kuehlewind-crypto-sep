@@ -24,7 +24,7 @@ author:
     ins: T. Pauly
     name: Tommy Pauly
     org: Apple Inc.
-    street: 1 Infinite Loop
+    street: One Apple Park Way
     city: Cupertino, California 95014
     country: United States of America
     email: tpauly@apple.com
@@ -32,7 +32,7 @@ author:
     ins: C. A. Wood
     name: Christopher A. Wood
     org: Apple Inc.
-    street: 1 Infinite Loop
+    street: One Apple Park Way
     city: Cupertino, California 95014
     country: United States of America
     email: cawood@apple.com
@@ -46,6 +46,7 @@ informative:
    I-D.ietf-quic-tls:
    I-D.moskowitz-sse:
    I-D.mglt-ipsecme-diet-esp:
+   I-D.pauly-taps-arch:
 
 --- abstract
 
@@ -149,11 +150,15 @@ The main interface it relies upon is starting the control channel, or handshake,
 5. A transport protocol uses a record protocol to send and receive application data.
 6. A record protocol uses a transport protocol to send and receive encrypted data.
 
-## Control-Transport Interface
+## Control-Transport Interface {#control-transport}
 
 Note that for the purposes of this interface description, it is assumed that the application is primarily interacting
 with the transport protocol, and thus the control protocol interacts with the application primarily through the abstraction
-of the transport protocol.
+of the transport protocol. Since security protocol interfaces often require pre-connection and active behavior on behalf
+of clients, we further categorize the following interfaces based on whether they are meant for
+passive configuration or active control.
+
+### Passive Configuration Interface
 
 - Start negotiation: The interface MUST provide an indication to start the protocol handshake for key negotiation, and
 have a way to be notified when the handshake is complete.
@@ -164,6 +169,19 @@ a connection to, such as the hostname it expects to be provided in certificate S
 - Local identities: The interface MUST allow the local identity to be set via a raw private key or interface to one
 to perform cryptographic operations such as signing and decryption.
 
+- Caching domain and lifetime: The application SHOULD be able to specify the instances of the protocol that can share
+cached keys, as well as the lifetime of cached resources.
+
+- Pre-shared keying material: The application SHOULD be able to specify pre-share keying material
+to use to bootstrap connections. The control protocol can pass this directly to the record protocol
+for use.
+
+- The protocol SHOULD allow applications to negotiate application protocols and related information.
+
+- The protocol SHOULD allow applications to specify negotiable cryptographic algorithm suites.
+
+### Active Control and Introspection Interface
+
 - State changes: The interface SHOULD provide a way for the transport to be notified of important state changes during
 the protocol execution and session lifetime, e.g., when the handshake begins, ends, or when a key update occurs.
 
@@ -171,14 +189,7 @@ the protocol execution and session lifetime, e.g., when the handshake begins, en
 which can either be specified as parameters to define how the peer's authentication can be validated, or when the protocol
 provides the authentication information for the application to inspect directly.
 
-- Caching domain and lifetime: The application SHOULD be able to specify the instances of the protocol that can share
-cached keys, as well as the lifetime of cached resources.
-
-- The protocol SHOULD allow applications to negotiate application protocols and related information.
-
-- The protocol SHOULD allow applications to specify negotiable cryptographic algorithm suites.
-
-- The protocol SHOULD expose the peer's identity information.
+- The protocol SHOULD expose the peer's identity information during and after connection establishment.
 
 ## Control-Record Interface
 
@@ -327,6 +338,21 @@ within the TCP connection that is used for the cryptographic handshake, provides
 transition path to enable easy deployment of new protocols.
 
 <!-- CAW: a hint to TLPN could be dropped here -->
+
+# Transport Service Architecture Integration
+
+The Transport Services Architecture ({{I-D.pauly-taps-arch}}) describes a system 
+that can provide transport security functionality behind a common interface.
+Such systems and their APIs provide applications with
+the ability to establish connections for sending and receiving data. The lifetime
+of a connection is comprised of a pre-establishment configuration stage, established
+(connected) stage, and terminated stage. Pre-establishment properties configured
+include: Local and Remote Endpoint, protocol selection properties, and specific
+protocol options. Applications configure security protocols during pre-establishment
+using the passive interfaces described in Section {{control-transport}}. Active
+control interfaces are exercised during connection establishment, i.e., from pre-establishment
+to established states. Applications can query connection metadata or state information,
+e.g., peer identity information, during and after connection establishment.
 
 # IANA Considerations
 

@@ -1,0 +1,750 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head profile="http://www.w3.org/2006/03/hcard http://dublincore.org/documents/2008/08/04/dc-html/">
+  <meta http-equiv="Content-Type" content="text/html; charset=us-ascii" />
+
+  <title>Separating Crypto Negotiation and Communication</title>
+
+  
+<style type="text/css">/*<![CDATA[*/
+@viewport {
+  zoom: 1.0;
+  width: extend-to-zoom;
+}
+@-ms-viewport {
+  width: extend-to-zoom;
+  zoom: 1.0;
+}
+
+@media screen and (min-width: 1024px) {
+  body>ul.toc, body>#rfc\.toc {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    right: calc(50vw - 550px);
+    width: 300px;
+    z-index: 1;
+  }
+  #rfc\.toc {
+    top: 55px;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  ul.toc, #rfc\.toc {
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  body>ul.toc {
+    top: 140px;
+  }
+
+  body {
+    padding-right: 350px;
+  }
+}
+
+body {
+  font: 16px "Helvetica Neue",Helvetica,Arial,sans-serif;
+  color: #333;
+  font-size-adjust: 0.5;
+  line-height: 24px;
+  margin: 75px auto;
+  max-width: 724px;
+}
+
+.title, .filename, h1, h2, h3, h4 {
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-size-adjust: 0.5;
+  font-weight: 500;
+  color: #333;
+  line-height: 100%;
+  margin: 0.8em 0 0.3em;
+}
+.title { font-size: 36px; }
+h1 { font-size: 36px; }
+h2 { font-size: 24px; }
+h3, h4 { font-size: 18px; }
+h1 a[href], h2 a[href], h3 a[href], h4 a[href] {
+  color: #333;
+}
+
+ul.toc li {
+  list-style: none;
+  text-indent: -2.5em;
+  padding-left: 2.5em;
+  padding-bottom: 5px;
+  margin: 0;
+}
+ul.toc ul {
+  margin: 0;
+}
+/* xml2rfc nests ul directly inside ul which messes with the style badly */
+ul.toc, ul.toc>ul, ul.toc ul>ul {
+  margin: 0 0 0 1.5em;
+}
+
+table {
+  margin-left: 0em;
+  border-collapse: collapse;
+}
+th {
+  text-align: left;
+  border-bottom: 2px solid #ddd;
+}
+td {
+  border-top: 1px solid #ddd;
+  vertical-align: top;
+}
+tr:nth-child(2n+1) > td,
+tr:nth-child(2n+1) > th {
+  background-color: #f9f9f9;
+}
+td.reference {
+  max-width: 200px;
+  border-top: none;
+  padding-right: 1em;
+}
+.right {
+  text-align: right;
+}
+
+
+table.header {
+  width: 100%;
+}
+table.header td {
+  border: none;
+  background-color: transparent;
+  color: black;
+}
+.filename {
+  color: rgb(119, 119, 119);
+  font-size: 23px;
+  font-weight: normal;
+  height: auto;
+  line-height: 100%;
+}
+#rfc\.abstract+p, #rfc\.abstract p {
+  font-size: 18px;
+  line-height: 27px%;
+}
+
+samp, tt, code, pre {
+  font: 11pt consolas, monospace;
+  font-size-adjust: none;
+}
+pre {
+  background-color: #eee;
+  border: 1px solid #ddd;
+  overflow-x: auto;
+  padding: 5px;
+  margin: 5px;
+}
+.figure {
+  font-style: italic;
+  margin: 0 1.5em;
+}
+
+address {
+  margin: 10px 0 0;
+}
+.vcard {
+  font-style: normal;
+}
+.vcardline {
+  display: block;
+}
+.vcardline .fn {
+  font-weight: bold;
+}
+.vcardline .hidden {
+  display: none;
+}
+
+dl {
+  margin-left: 1em;
+}
+dl.dl-horizontal: {
+  margin-left: 0;
+}
+dl > dt {
+  float: left;
+  margin-right: 1em;
+}
+dl.nohang > dt {
+  float: none;
+}
+dl > dd {
+  margin-bottom: .5em;
+}
+dl.compact > dd {
+  margin-bottom: 0em;
+}
+dl > dd > dl {
+  margin-top: 0.5em;
+  margin-bottom: 0em;
+}
+ul.empty {
+  list-style-type: none;
+}
+ul.empty li {
+  margin-top: .5em;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid #eee;
+}
+hr.noprint {
+  display: none;
+}
+
+a {
+  text-decoration: none;
+}
+a[href] {
+  color: #2a6496;
+}
+a[href]:hover {
+  background-color: #eee;
+}
+
+ol, ul, li, p {
+  padding: 0;
+  margin: 0.5em 0 0.5em 2em;
+}
+li, p {
+  margin-left: 0;
+}
+address {
+  font-style: normal;
+}
+
+.github-fork-ribbon-wrapper {
+  display: none;
+}
+@media screen and (min-width: 800px) {
+  /* "Fork me on GitHub" CSS ribbon based on
+   * https://github.com/simonwhitaker/github-fork-ribbon-css
+   */
+  .github-fork-ribbon {
+    position: absolute;
+    padding: 2px 0;
+    background-color: #a00;
+    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.15));
+    box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.5);
+    font: 700 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+    pointer-events: auto;
+
+    top: 38px;
+    right: -45px;
+
+    transform: rotate(45deg);
+  }
+
+  .github-fork-ribbon a[href],
+  .github-fork-ribbon a[href]:hover {
+    color: #fff;
+    background-color: transparent;
+    text-decoration: none;
+    text-shadow: 0 -1px rgba(0, 0, 0, 0.5);
+    text-align: center;
+
+    width: 190px;
+    line-height: 18px;
+
+    display: inline-block;
+    padding: 2px 0;
+
+    border: 1.5px dotted #fff;
+    border-color: rgba(255, 255, 255, 0.6);
+  }
+
+  .github-fork-ribbon-wrapper {
+    display: block;
+    width: 130px;
+    height: 130px;
+    position: absolute;
+    overflow: hidden;
+    top: 0; right: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+}
+@media screen and (min-width: 1000px) {
+  .github-fork-ribbon-wrapper {
+    position: fixed;
+  }
+/*]]>*/</style>
+
+
+  <link href="#rfc.toc" rel="Contents">
+<link href="#rfc.section.1" rel="Chapter" title="1 Introduction">
+<link href="#rfc.section.2" rel="Chapter" title="2 Terminology">
+<link href="#rfc.section.3" rel="Chapter" title="3 Protocol Interfaces">
+<link href="#rfc.section.3.1" rel="Chapter" title="3.1 Control-Transport Interface">
+<link href="#rfc.section.3.1.1" rel="Chapter" title="3.1.1 Passive Configuration Interface">
+<link href="#rfc.section.3.1.2" rel="Chapter" title="3.1.2 Active Control and Introspection Interface">
+<link href="#rfc.section.3.2" rel="Chapter" title="3.2 Control-Record Interface">
+<link href="#rfc.section.3.3" rel="Chapter" title="3.3 Transport-Record Interface">
+<link href="#rfc.section.4" rel="Chapter" title="4 Existing Mappings">
+<link href="#rfc.section.5" rel="Chapter" title="5 Benefits of Separation">
+<link href="#rfc.section.5.1" rel="Chapter" title="5.1 Reducing Connection Latency">
+<link href="#rfc.section.5.2" rel="Chapter" title="5.2 Protocol Flexibility">
+<link href="#rfc.section.5.3" rel="Chapter" title="5.3 Protocol Capability Negotiation">
+<link href="#rfc.section.6" rel="Chapter" title="6 Transport Service Architecture Integration">
+<link href="#rfc.section.7" rel="Chapter" title="7 IANA Considerations">
+<link href="#rfc.section.8" rel="Chapter" title="8 Security Considerations">
+<link href="#rfc.section.9" rel="Chapter" title="9 Acknowledgments">
+<link href="#rfc.references" rel="Chapter" title="10 Informative References">
+<link href="#rfc.authors" rel="Chapter">
+
+
+  <meta name="generator" content="xml2rfc version 2.9.5 - https://tools.ietf.org/tools/xml2rfc" />
+  <link rel="schema.dct" href="http://purl.org/dc/terms/" />
+
+  <meta name="dct.creator" content="Kuehlewind, M., Pauly, T., and C. Wood" />
+  <meta name="dct.identifier" content="urn:ietf:id:draft-kuehlewind-taps-crypto-sep-latest" />
+  <meta name="dct.issued" scheme="ISO8601" content="2018-03-05" />
+  <meta name="dct.abstract" content="Secure transport protocols often consist of three logically distinct components: transport, control (handshake), and record protection. Typically, such a protocol contains a single module that is responsible for all three functions. However, in many cases, this coupling is unnecessary.  For example, while cryptographic context and endpoint capabilities need to be known before encrypted application data can be sent on a specific transport connection, there is otherwise no technical constraint that a cryptographic handshake must be performed on said connection. This document recommends a logical separation between transport, control, and record components of secure transport protocols. We compare existing protocols such as Transport Layer Security, QUIC, and IKEv2+ESP in the context of this logical separation." />
+  <meta name="description" content="Secure transport protocols often consist of three logically distinct components: transport, control (handshake), and record protection. Typically, such a protocol contains a single module that is responsible for all three functions. However, in many cases, this coupling is unnecessary.  For example, while cryptographic context and endpoint capabilities need to be known before encrypted application data can be sent on a specific transport connection, there is otherwise no technical constraint that a cryptographic handshake must be performed on said connection. This document recommends a logical separation between transport, control, and record components of secure transport protocols. We compare existing protocols such as Transport Layer Security, QUIC, and IKEv2+ESP in the context of this logical separation." />
+
+</head>
+
+<body>
+
+  <table class="header">
+    <tbody>
+    
+    	<tr>
+<td class="left">Network Working Group</td>
+<td class="right">M. Kuehlewind</td>
+</tr>
+<tr>
+<td class="left">Internet-Draft</td>
+<td class="right">ETH Zurich</td>
+</tr>
+<tr>
+<td class="left">Intended status: Informational</td>
+<td class="right">T. Pauly</td>
+</tr>
+<tr>
+<td class="left">Expires: September 6, 2018</td>
+<td class="right">C. Wood</td>
+</tr>
+<tr>
+<td class="left"></td>
+<td class="right">Apple Inc.</td>
+</tr>
+<tr>
+<td class="left"></td>
+<td class="right">March 05, 2018</td>
+</tr>
+
+    	
+    </tbody>
+  </table>
+
+  <p class="title">Separating Crypto Negotiation and Communication<br />
+  <span class="filename">draft-kuehlewind-taps-crypto-sep-latest</span></p>
+  
+  <h1 id="rfc.abstract"><a href="#rfc.abstract">Abstract</a></h1>
+<p>Secure transport protocols often consist of three logically distinct components: transport, control (handshake), and record protection. Typically, such a protocol contains a single module that is responsible for all three functions. However, in many cases, this coupling is unnecessary.  For example, while cryptographic context and endpoint capabilities need to be known before encrypted application data can be sent on a specific transport connection, there is otherwise no technical constraint that a cryptographic handshake must be performed on said connection. This document recommends a logical separation between transport, control, and record components of secure transport protocols. We compare existing protocols such as Transport Layer Security, QUIC, and IKEv2+ESP in the context of this logical separation.</p>
+<h1 id="rfc.status"><a href="#rfc.status">Status of This Memo</a></h1>
+<p>This Internet-Draft is submitted in full conformance with the provisions of BCP 78 and BCP 79.</p>
+<p>Internet-Drafts are working documents of the Internet Engineering Task Force (IETF).  Note that other groups may also distribute working documents as Internet-Drafts.  The list of current Internet-Drafts is at https://datatracker.ietf.org/drafts/current/.</p>
+<p>Internet-Drafts are draft documents valid for a maximum of six months and may be updated, replaced, or obsoleted by other documents at any time.  It is inappropriate to use Internet-Drafts as reference material or to cite them other than as "work in progress."</p>
+<p>This Internet-Draft will expire on September 6, 2018.</p>
+<h1 id="rfc.copyrightnotice"><a href="#rfc.copyrightnotice">Copyright Notice</a></h1>
+<p>Copyright (c) 2018 IETF Trust and the persons identified as the document authors.  All rights reserved.</p>
+<p>This document is subject to BCP 78 and the IETF Trust's Legal Provisions Relating to IETF Documents (https://trustee.ietf.org/license-info) in effect on the date of publication of this document.  Please review these documents carefully, as they describe your rights and restrictions with respect to this document.  Code Components extracted from this document must include Simplified BSD License text as described in Section 4.e of the Trust Legal Provisions and are provided without warranty as described in the Simplified BSD License.</p>
+
+  
+  <hr class="noprint" />
+  <h1 class="np" id="rfc.toc"><a href="#rfc.toc">Table of Contents</a></h1>
+  <ul class="toc">
+
+  	<li>1.   <a href="#rfc.section.1">Introduction</a>
+</li>
+<li>2.   <a href="#rfc.section.2">Terminology</a>
+</li>
+<li>3.   <a href="#rfc.section.3">Protocol Interfaces</a>
+</li>
+<ul><li>3.1.   <a href="#rfc.section.3.1">Control-Transport Interface</a>
+</li>
+<ul><li>3.1.1.   <a href="#rfc.section.3.1.1">Passive Configuration Interface</a>
+</li>
+<li>3.1.2.   <a href="#rfc.section.3.1.2">Active Control and Introspection Interface</a>
+</li>
+</ul><li>3.2.   <a href="#rfc.section.3.2">Control-Record Interface</a>
+</li>
+<li>3.3.   <a href="#rfc.section.3.3">Transport-Record Interface</a>
+</li>
+</ul><li>4.   <a href="#rfc.section.4">Existing Mappings</a>
+</li>
+<li>5.   <a href="#rfc.section.5">Benefits of Separation</a>
+</li>
+<ul><li>5.1.   <a href="#rfc.section.5.1">Reducing Connection Latency</a>
+</li>
+<li>5.2.   <a href="#rfc.section.5.2">Protocol Flexibility</a>
+</li>
+<li>5.3.   <a href="#rfc.section.5.3">Protocol Capability Negotiation</a>
+</li>
+</ul><li>6.   <a href="#rfc.section.6">Transport Service Architecture Integration</a>
+</li>
+<li>7.   <a href="#rfc.section.7">IANA Considerations</a>
+</li>
+<li>8.   <a href="#rfc.section.8">Security Considerations</a>
+</li>
+<li>9.   <a href="#rfc.section.9">Acknowledgments</a>
+</li>
+<li>10.   <a href="#rfc.references">Informative References</a>
+</li>
+<li><a href="#rfc.authors">Authors' Addresses</a>
+</li>
+
+
+  </ul>
+
+  <h1 id="rfc.section.1">
+<a href="#rfc.section.1">1.</a> <a href="#introduction" id="introduction">Introduction</a>
+</h1>
+<p id="rfc.section.1.p.1">Secure transport protocols are generally composed of three pieces:</p>
+<p></p>
+
+<ol>
+<li>A transport protocol to handle the transfer of data.</li>
+<li>A record protocol to frame, encrypt and/or authenticate data</li>
+<li>A control protocol to perform cryptographic handshakes, negotiate shared secrets, and maintain state during the lifetime of cryptographic session including session resumption and key refreshment. (In the context of TLS, the control protocol is called the handshake protocol.)</li>
+</ol>
+<p id="rfc.section.1.p.3">For ease of deployment and standardization, among other reasons, these constituents are often tightly coupled. For example, in TLS <a href="#RFC5246" class="xref">[RFC5246]</a>, the control protocol depends on the record protocol, and vice versa. However, more recent transport protocols such as QUIC <a href="#I-D.ietf-quic-tls" class="xref">[I-D.ietf-quic-tls]</a> keep these pieces separate. For example, QUIC uses TLS to negotiate secrets, and exports those secrets to encrypt packets independent of TLS.</p>
+<p id="rfc.section.1.p.4">Separating these pieces is important, as new secure transport protocols increasingly rely on session resumption mechanisms where cryptographic context can be resumed to transmit application data with the first packet without delay for connection setup and negotiation.  In the case where there is no cryptographic context available when an application expresses the need to transmit data to a certain endpoint, it must first run the control protocol on a transport connection before being able to transmit application data. If the control protocol can be separated from the other components, then it can use another transport connection to establish secrets without blocking the application&#8217;s main transport connection. This also opens up the possibility to run the control protocol well in advance of the need to send application data, to avoid unnecessary delays. For example, a client system could maintain a database of endpoints it is likely to communicate with, and establish keying material with a control protocol at periodic intervals to ensure fresh keys for new transport connections.</p>
+<p><a href="#I-D.moskowitz-sse" class="xref">[I-D.moskowitz-sse]</a> proposes a similar approach. However while <a href="#I-D.moskowitz-sse" class="xref">[I-D.moskowitz-sse]</a> proposes a new protocol to negotiate and maintain long-term cryptographic sessions, this document relies on the use of existing protocols and only discusses requirements for the evolution of these protocols and exchange of information within one endpoint locally.</p>
+<h1 id="rfc.section.2">
+<a href="#rfc.section.2">2.</a> <a href="#terminology" id="terminology">Terminology</a>
+</h1>
+<p></p>
+
+<ul>
+<li>Transport Protocol: A protocol that can transport messages between two endpoints. This may represent the service offered to applications to allow them to send and receive data before encryption; and also represent the protocol that can transmit control data and encrypted records.</li>
+<li>Control Protocol: A protocol that performs a cryptographic handshake and, in addition, can validate and authenticate endpoints, encrypt and authenticate its negotiation, and ultimately generate keying material.</li>
+<li>Record Protocol: A protocol that can use keying material to transform messages. A record will generally add a frame around application data, and authenticate and/or encrypt the data.</li>
+<li>Keying Material: A shared secret from which pre-shared keys can be derived and subsequently used to encrypt and authenticate data, generated by a control protocol and used by a record protocol.</li>
+</ul>
+<h1 id="rfc.section.3">
+<a href="#rfc.section.3">3.</a> <a href="#protocol-interfaces" id="protocol-interfaces">Protocol Interfaces</a>
+</h1>
+<p id="rfc.section.3.p.1">In traditional models in which the protocols are not separated out into the three elements of control, record, and transport protocols, there are two basic approaches to the interactions:</p>
+<p></p>
+
+<ol>
+<li>The transport protocol provides data to the security protocol and gets back an encrypted version of the data to be sent (control and record protocols are combined).</li>
+<li>The security protocol provides keying material to the transport protocol, and the transport protocol is responsible for encrypting data (transport and record protocols are combined).</li>
+</ol>
+<p id="rfc.section.3.p.3">By teasing apart all three portions as separate protocols, there end up being six interface points:</p>
+<div id="rfc.figure.1"></div>
+<div id="fig-dependencies"></div>
+<pre>
+Application Data
+     |    ^
+     |    |
++----V----+-----+      (1)       +---------------+
+|               +----------------&gt;               |
+|   Transport   |                |     Control   |
+|               &lt;----------------+               |
++-+-----^-------+      (2)       +-----+-----^---+
+  |     |                              |     |
+  |     |(6)                        (3)|     |
+  |     |                              |     |(4)
+  |     |        +---------------+     |     |
+  |     +--------+               &lt;-----+     |
+  |(5)           |    Record     |           |
+  +--------------&gt;               +-----------+
+                 +---------------+
+</pre>
+<p class="figure">Figure 1: Secure Transport Protocol Components and Interactions</p>
+<p></p>
+
+<ol>
+<li>A transport protocol depends upon a control protocol to establish keying material to protect application data being sent through the transport.  The main interface it relies upon is starting the control channel, or handshake, or ensuring that the material is ready.</li>
+<li>A control protocol depends upon a transport protocol in order to send and receive negotiation messages with the remote peer.</li>
+<li>A control protocol sends its keying material and cryptographic context to the record protocol to use.</li>
+<li>A record protocol may signal state expiration events to a control protocol.</li>
+<li>A transport protocol uses a record protocol to send and receive application data.</li>
+<li>A record protocol uses a transport protocol to send and receive encrypted data.</li>
+</ol>
+<h1 id="rfc.section.3.1">
+<a href="#rfc.section.3.1">3.1.</a> <a href="#control-transport" id="control-transport">Control-Transport Interface</a>
+</h1>
+<p id="rfc.section.3.1.p.1">Note that for the purposes of this interface description, it is assumed that the application is primarily interacting with the transport protocol, and thus the control protocol interacts with the application primarily through the abstraction of the transport protocol. Since security protocol interfaces often require pre-connection and active behavior on behalf of clients, we further categorize the following interfaces based on whether they are meant for passive configuration or active control.</p>
+<h1 id="rfc.section.3.1.1">
+<a href="#rfc.section.3.1.1">3.1.1.</a> <a href="#passive-configuration-interface" id="passive-configuration-interface">Passive Configuration Interface</a>
+</h1>
+<p></p>
+
+<ul>
+<li>Start negotiation: The interface MUST provide an indication to start the protocol handshake for key negotiation, and have a way to be notified when the handshake is complete.</li>
+<li>Identity constraints: The interface MUST allow the application to constrain the identities that it will accept a connection to, such as the hostname it expects to be provided in certificate SAN.</li>
+<li>Local identities: The interface MUST allow the local identity to be set via a raw private key or interface to one to perform cryptographic operations such as signing and decryption.</li>
+<li>Caching domain and lifetime: The application SHOULD be able to specify the instances of the protocol that can share cached keys, as well as the lifetime of cached resources.</li>
+<li>Pre-shared keying material: The application SHOULD be able to specify pre-share keying material to use to bootstrap connections. The control protocol can pass this directly to the record protocol for use.</li>
+<li>The protocol SHOULD allow applications to negotiate application protocols and related information.</li>
+<li>The protocol SHOULD allow applications to specify negotiable cryptographic algorithm suites.</li>
+</ul>
+<h1 id="rfc.section.3.1.2">
+<a href="#rfc.section.3.1.2">3.1.2.</a> <a href="#active-control-and-introspection-interface" id="active-control-and-introspection-interface">Active Control and Introspection Interface</a>
+</h1>
+<p></p>
+
+<ul>
+<li>State changes: The interface SHOULD provide a way for the transport to be notified of important state changes during the protocol execution and session lifetime, e.g., when the handshake begins, ends, or when a key update occurs.</li>
+<li>Validation: The interface MUST provide a way for the application to participate in the endpoint authentication and validation, which can either be specified as parameters to define how the peer&#8217;s authentication can be validated, or when the protocol provides the authentication information for the application to inspect directly.</li>
+<li>The protocol SHOULD expose the peer&#8217;s identity information during and after connection establishment.</li>
+</ul>
+<h1 id="rfc.section.3.2">
+<a href="#rfc.section.3.2">3.2.</a> <a href="#control-record-interface" id="control-record-interface">Control-Record Interface</a>
+</h1>
+<p></p>
+
+<ul>
+<li>Key export: The interface MUST provide a way to export keying material from a control protocol to a record protocol with well-defined cryptographic properties, e.g., &#8220;forward-secure.&#8221;</li>
+<li>Key lifetime and rotation: The interface MUST provide a way for the control protocol to define key lifetime bounds in terms of <em>time</em> or <em>bytes encrypted</em> and, additionally, provide a way to forcefully update cryptographic session keys at will. The record protocol MUST be able to signal back to the control protocol that a lifetime has been reached and that rotation is required. These values SHOULD be configurable by the application.</li>
+</ul>
+<h1 id="rfc.section.3.3">
+<a href="#rfc.section.3.3">3.3.</a> <a href="#transport-record-interface" id="transport-record-interface">Transport-Record Interface</a>
+</h1>
+<p></p>
+
+<ul>
+<li>Transform data: The interface MUST provide a way to send raw application data from the transport protocol to a record protocol to transform it based on the keying material. This data is then sent out by the transport protocol. The same applies for inbound data, in which inbound transport data is transformed by the record protocol into raw application data.</li>
+<li>Reliability: The transport MUST specify if messages are transmitted reliable and in order.</li>
+<li>Maximum message size (optional): The transport may specify a maximum message size for the encrypted data if e.g. a datagram transport is used</li>
+</ul>
+<h1 id="rfc.section.4">
+<a href="#rfc.section.4">4.</a> <a href="#existing-mappings" id="existing-mappings">Existing Mappings</a>
+</h1>
+<p id="rfc.section.4.p.1">In this section we document existing mappings between common transport security protocols and the three components described in Section I.</p>
+<p></p>
+
+<ul><li>TLS/DTLS: TLS <a href="#RFC5246" class="xref">[RFC5246]</a> and DTLS <a href="#RFC6347" class="xref">[RFC6347]</a> is a combination of a control (handshake) and record protocol, with a dependency on some underlying transport.</li></ul>
+<pre>
+              Application (configure and I/O)
+                |     ^
+                |     |
+      +---------V-----+--------+
+      |        Connection      |
+      +----+----^--------------+
++----------|----|------------------------------------+     
+|          |    |       --TLS--                      |
+|     +----V----+-----+         +---------------+    |
+|     |               +---------&gt;               |    |
+|     |    Control    |         |     Record    |    |
+|     |  (Handshake)  &lt;---------+               |    |
+|     +---------------+         +----+------^---+    |
+|                                    |      |        |
++------------------------------------|------|--------+
+                                     |      |
+                                +----V------+----+
+                                |    Transport   |
+                                +----------------+
+</pre>
+<p></p>
+
+<ul><li>QUIC + TLS: The emerging QUIC standard is decomposed into the three pieces outlined in Section I <a href="#I-D.ietf-quic-tls" class="xref">[I-D.ietf-quic-tls]</a>.  TLS is used as the control protocol running on a dedicated QUIC stream, a QUIC-specific record protocol encrypts and encapsulates stream frames, and the main QUIC component handles the transport of these frames.</li></ul>
+<pre>
+    Application (configure and I/O)
+      |     ^
++-----|-----|------------------------------------+     
+|     |     |      --QUIC--                      |
+|     |     |                                    |
+|  +--V-----+---+             +--------------+   |   
+|  |    QUIC    |------------&gt;|      TLS     |   |
+|  | (transport)|             |   (control)  |   |   
+|  |            &lt;-------------+              |   |
+|  ++---^--+--^-+             +--^-------+---+   |
+|   |   |  |  |                  |       |       |
+|   |   |  |  |                  |       |       |
+|   |   |  |  |  +V---------+-+  |       |       |
+|   |   |  |  +--&gt;   Packet   +--+       |       |
+|   |   |  |     | Protection |          |       |
+|   |   |  +-----+  (record)  &lt;----------+       |
+|   |   |        +------------+                  |
+|   |   |                                        |
++---|---|----------+-----------------------------+
+    |   |           
++---V---+--------+
+|    Transport   |
++----------------+
+</pre>
+<p></p>
+
+<ul><li>IKEv2 + ESP: IKEv2 <a href="#RFC7296" class="xref">[RFC7296]</a> is a control protocol commonly used to establish keys for use in IPsec (often VPN) deployments. It is already a distinct protocol from its commonly paired record protocol, which is ESP <a href="#RFC4303" class="xref">[RFC4303]</a>. ESP encrypts and authenticates IP datagrams, and sends them as datagrams over a transport mechanism such, e.g., IP or UDP.</li></ul>
+<pre>
+        Application (configure)    Application (I/O)                  
+          |    ^                     |    ^
+     +----V----+-----+         +-----V----+----+    
+     |               +---------&gt;               |    
+     |     IKEv2     |         |     Record    |    
+     |               &lt;---------+               |    
+     +----+------^---+         +----+------^---+   
+          |      |                    |      |       
+     +----V------+------------------V------+----+
+     |            (Unreliable) Transport        |
+     +------------------------------------------+
+</pre>
+<h1 id="rfc.section.5">
+<a href="#rfc.section.5">5.</a> <a href="#benefits-of-separation" id="benefits-of-separation">Benefits of Separation</a>
+</h1>
+<h1 id="rfc.section.5.1">
+<a href="#rfc.section.5.1">5.1.</a> <a href="#reducing-connection-latency" id="reducing-connection-latency">Reducing Connection Latency</a>
+</h1>
+<p id="rfc.section.5.1.p.1">One of the clearest benefits of separating the control protocol from the record protocol is that the cryptographic handshake can be performed out-of-band from the application&#8217;s data transfer. This should essentially reduce the number of RTTs required before being able to send data by the full length of the handshake (which is commonly 1 or 2 RTTs in the best cases for TLS 1.2 and IKEv2, potentially more if cookie challenges or extended authentication are required).</p>
+<p id="rfc.section.5.1.p.2">To avoid long-lived transport connections that wouldn&#8217;t be actively used, and thus would be vulnerable to timeouts on NATs or firewalls, an obvious approach to separating the control and record protocols is to use different transport connections for the early handshake and the data transfer. However, this approach of using separate connections will not always save RTTs if the cryptographic handshake and data transfer are back-to-back. Each connection may require its own transport protocol handshake, and if the data transfer must wait for two transport protocols to establish and the cryptographic handshake to be finished before sending, then it may experience higher latency. Implementations SHOULD avoid this by either allowing the control and record protocols to share a single transport connection or open two connections in parallel when the control protocol has not pre-fetched keys. Latency benefits, however, can even be achieved when ensuring that this scenario does not occur by always having the control protocol refresh the keys whenever old ones are near expiry.</p>
+<h1 id="rfc.section.5.2">
+<a href="#rfc.section.5.2">5.2.</a> <a href="#protocol-flexibility" id="protocol-flexibility">Protocol Flexibility</a>
+</h1>
+<p id="rfc.section.5.2.p.1">Separation of the control, record, and transport protocols also allows for more flexible composition of protocols with one another. If a deployment uses a control protocol like TLS, which requires a stream-based transport protocol like TCP, separation of protocols will allow it to use the resulting keys for record protocols that run on datagram transport protocols like UDP.</p>
+<p id="rfc.section.5.2.p.2">This flexibility may be useful for implementations that are optimizing for packet size by choosing minimal/lightweight record protocols, while being able to use commonly supported control protocols like TLS. One example here is the approach of a VPN tunnel that uses ESP or Diet-ESP <a href="#I-D.mglt-ipsecme-diet-esp" class="xref">[I-D.mglt-ipsecme-diet-esp]</a> to encrypt datagrams, but uses TLS for establishing keys.</p>
+<h1 id="rfc.section.5.3">
+<a href="#rfc.section.5.3">5.3.</a> <a href="#protocol-capability-negotiation" id="protocol-capability-negotiation">Protocol Capability Negotiation</a>
+</h1>
+<p id="rfc.section.5.3.p.1">Enabling the use of a different transport protocol for the actual data transmission than for the cryptographic handshakes opens also the possibility to negotiate protocol capabilities for the data transmission. For TLS, usually TCP is the appropriate transport protocol to use, as it is also widely supported by endpoints. Allowing an endpoint to indicate the support of other, new transport protocols within the TCP connection that is used for the cryptographic handshake, provides a dynamic transition path to enable easy deployment of new protocols.</p>
+<h1 id="rfc.section.6">
+<a href="#rfc.section.6">6.</a> <a href="#transport-service-architecture-integration" id="transport-service-architecture-integration">Transport Service Architecture Integration</a>
+</h1>
+<p id="rfc.section.6.p.1">The Transport Services Architecture (<a href="#I-D.pauly-taps-arch" class="xref">[I-D.pauly-taps-arch]</a>) describes a system that can provide transport security functionality behind a common interface.  Such systems and their APIs provide applications with the ability to establish connections for sending and receiving data. The lifetime of a connection is comprised of a pre-establishment configuration stage, established (connected) stage, and terminated stage. Pre-establishment properties configured include: Local and Remote Endpoint, protocol selection properties, and specific protocol options. Applications configure security protocols during pre-establishment using the passive interfaces described in Section <a href="#control-transport" class="xref">Section 3.1</a>. Active control interfaces are exercised during connection establishment, i.e., from pre-establishment to established states. Applications can query connection metadata or state information, e.g., peer identity information, during and after connection establishment.</p>
+<h1 id="rfc.section.7">
+<a href="#rfc.section.7">7.</a> <a href="#iana-considerations" id="iana-considerations">IANA Considerations</a>
+</h1>
+<p id="rfc.section.7.p.1">This document has on request to IANA.</p>
+<h1 id="rfc.section.8">
+<a href="#rfc.section.8">8.</a> <a href="#security-considerations" id="security-considerations">Security Considerations</a>
+</h1>
+<p id="rfc.section.8.p.1">(editor&#8217;s note: this section will be added later. However, this document discusses the use of cryptographic context for transport connections and as such it has security relevant consideration within the whole document.)</p>
+<h1 id="rfc.section.9">
+<a href="#rfc.section.9">9.</a> <a href="#acknowledgments" id="acknowledgments">Acknowledgments</a>
+</h1>
+<p id="rfc.section.9.p.1">This work is partially supported by the European Commission under Horizon 2020 grant agreement no. 688421 Measurement and Architecture for a Middleboxed Internet (MAMI), and by the Swiss State Secretariat for Education, Research, and Innovation under contract no. 15.0268. This support does not imply endorsement.  Thanks to Brian Trammell for reviewing this draft.</p>
+<h1 id="rfc.references">
+<a href="#rfc.references">10.</a> Informative References</h1>
+<table><tbody>
+<tr>
+<td class="reference"><b id="I-D.ietf-quic-tls">[I-D.ietf-quic-tls]</b></td>
+<td class="top">
+<a>Thomson, M.</a> and <a>S. Turner</a>, "<a href="https://tools.ietf.org/html/draft-ietf-quic-tls-10">Using Transport Layer Security (TLS) to Secure QUIC</a>", Internet-Draft draft-ietf-quic-tls-10, March 2018.</td>
+</tr>
+<tr>
+<td class="reference"><b id="I-D.mglt-ipsecme-diet-esp">[I-D.mglt-ipsecme-diet-esp]</b></td>
+<td class="top">
+<a>Migault, D.</a>, <a>Guggemos, T.</a> and <a>C. Bormann</a>, "<a href="https://tools.ietf.org/html/draft-mglt-ipsecme-diet-esp-05">ESP Header Compression and Diet-ESP</a>", Internet-Draft draft-mglt-ipsecme-diet-esp-05, October 2017.</td>
+</tr>
+<tr>
+<td class="reference"><b id="I-D.moskowitz-sse">[I-D.moskowitz-sse]</b></td>
+<td class="top">
+<a>Moskowitz, R.</a>, <a>Faynberg, I.</a>, <a>Lu, H.</a>, <a>Hares, S.</a> and <a>P. Giacomin</a>, "<a href="https://tools.ietf.org/html/draft-moskowitz-sse-05">Session Security Envelope</a>", Internet-Draft draft-moskowitz-sse-05, June 2017.</td>
+</tr>
+<tr>
+<td class="reference"><b id="I-D.pauly-taps-arch">[I-D.pauly-taps-arch]</b></td>
+<td class="top">
+<a>Pauly, T.</a>, <a>Trammell, B.</a>, <a>Brunstrom, A.</a>, <a>Fairhurst, G.</a>, <a>Perkins, C.</a>, <a>Tiesel, P.</a> and <a>C. Wood</a>, "<a href="https://tools.ietf.org/html/draft-pauly-taps-arch-00">An Architecture for Transport Services</a>", Internet-Draft draft-pauly-taps-arch-00, February 2018.</td>
+</tr>
+<tr>
+<td class="reference"><b id="RFC4303">[RFC4303]</b></td>
+<td class="top">
+<a>Kent, S.</a>, "<a href="https://tools.ietf.org/html/rfc4303">IP Encapsulating Security Payload (ESP)</a>", RFC 4303, DOI 10.17487/RFC4303, December 2005.</td>
+</tr>
+<tr>
+<td class="reference"><b id="RFC5246">[RFC5246]</b></td>
+<td class="top">
+<a>Dierks, T.</a> and <a>E. Rescorla</a>, "<a href="https://tools.ietf.org/html/rfc5246">The Transport Layer Security (TLS) Protocol Version 1.2</a>", RFC 5246, DOI 10.17487/RFC5246, August 2008.</td>
+</tr>
+<tr>
+<td class="reference"><b id="RFC6347">[RFC6347]</b></td>
+<td class="top">
+<a>Rescorla, E.</a> and <a>N. Modadugu</a>, "<a href="https://tools.ietf.org/html/rfc6347">Datagram Transport Layer Security Version 1.2</a>", RFC 6347, DOI 10.17487/RFC6347, January 2012.</td>
+</tr>
+<tr>
+<td class="reference"><b id="RFC7296">[RFC7296]</b></td>
+<td class="top">
+<a>Kaufman, C.</a>, <a>Hoffman, P.</a>, <a>Nir, Y.</a>, <a>Eronen, P.</a> and <a>T. Kivinen</a>, "<a href="https://tools.ietf.org/html/rfc7296">Internet Key Exchange Protocol Version 2 (IKEv2)</a>", STD 79, RFC 7296, DOI 10.17487/RFC7296, October 2014.</td>
+</tr>
+<tr>
+<td class="reference"><b id="RFC7301">[RFC7301]</b></td>
+<td class="top">
+<a>Friedl, S.</a>, <a>Popov, A.</a>, <a>Langley, A.</a> and <a>E. Stephan</a>, "<a href="https://tools.ietf.org/html/rfc7301">Transport Layer Security (TLS) Application-Layer Protocol Negotiation Extension</a>", RFC 7301, DOI 10.17487/RFC7301, July 2014.</td>
+</tr>
+</tbody></table>
+<h1 id="rfc.authors"><a href="#rfc.authors">Authors' Addresses</a></h1>
+<div class="avoidbreak">
+  <address class="vcard">
+	<span class="vcardline">
+	  <span class="fn">Mirja Kuehlewind</span> 
+	  <span class="n hidden">
+		<span class="family-name">Kuehlewind</span>
+	  </span>
+	</span>
+	<span class="org vcardline">ETH Zurich</span>
+	<span class="adr">
+	  <span class="vcardline">Gloriastrasse 35</span>
+
+	  <span class="vcardline">
+		<span class="locality">8092 Zurich</span>,  
+		<span class="region"></span>
+		<span class="code"></span>
+	  </span>
+	  <span class="country-name vcardline">Switzerland</span>
+	</span>
+	<span class="vcardline">EMail: <a href="mailto:mirja.kuehlewind@tik.ee.ethz.ch">mirja.kuehlewind@tik.ee.ethz.ch</a></span>
+
+  </address>
+</div><div class="avoidbreak">
+  <address class="vcard">
+	<span class="vcardline">
+	  <span class="fn">Tommy Pauly</span> 
+	  <span class="n hidden">
+		<span class="family-name">Pauly</span>
+	  </span>
+	</span>
+	<span class="org vcardline">Apple Inc.</span>
+	<span class="adr">
+	  <span class="vcardline">One Apple Park Way</span>
+
+	  <span class="vcardline">
+		<span class="locality">Cupertino, California 95014</span>,  
+		<span class="region"></span>
+		<span class="code"></span>
+	  </span>
+	  <span class="country-name vcardline">United States of America</span>
+	</span>
+	<span class="vcardline">EMail: <a href="mailto:tpauly@apple.com">tpauly@apple.com</a></span>
+
+  </address>
+</div><div class="avoidbreak">
+  <address class="vcard">
+	<span class="vcardline">
+	  <span class="fn">Christopher A. Wood</span> 
+	  <span class="n hidden">
+		<span class="family-name">Wood</span>
+	  </span>
+	</span>
+	<span class="org vcardline">Apple Inc.</span>
+	<span class="adr">
+	  <span class="vcardline">One Apple Park Way</span>
+
+	  <span class="vcardline">
+		<span class="locality">Cupertino, California 95014</span>,  
+		<span class="region"></span>
+		<span class="code"></span>
+	  </span>
+	  <span class="country-name vcardline">United States of America</span>
+	</span>
+	<span class="vcardline">EMail: <a href="mailto:cawood@apple.com">cawood@apple.com</a></span>
+
+  </address>
+</div>
+
+</body>
+</html>
