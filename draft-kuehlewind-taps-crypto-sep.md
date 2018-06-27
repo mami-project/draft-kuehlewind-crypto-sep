@@ -40,13 +40,18 @@ author:
 informative:
    RFC4303:
    RFC5246:
+   RFC5763:
+   RFC5764:
    RFC6347:
    RFC7296:
    RFC7301:
    I-D.ietf-quic-tls:
    I-D.moskowitz-sse:
    I-D.mglt-ipsecme-diet-esp:
-   I-D.pauly-taps-arch:
+   I-D.ietf-taps-arch:
+   OpenVPN:
+    title: OpenVPN Security Overview
+    target: https://openvpn.net/index.php/open-source/documentation/security-overview.html
 
 --- abstract
 
@@ -294,6 +299,73 @@ them as datagrams over a transport mechanism such, e.g., IP or UDP.
      +------------------------------------------+
 ~~~
 
+- OpenVPN {{OpenVPN}}: OpenVPN consists of two separate stacks -- one for TLS, which is 
+used for key exchange and derivation, and the other as an interface to tunnel
+IP packets over UDP. A common multiplexing layer is used to send TLS and OpenVPN
+framed packets over an unreliable transport layer. OpenVPN adds a reliability layer to TLS
+to ensure packets are sent and processed in order. Running over TCP naturally provides
+this reliability. After the TLS connection finishes, OpenVPN extracts encryption and authentication 
+keys from TLS, via the PRF, and uses them to encrypt and authenticate IP packets. Packets are 
+framed using a simple length-type-value envelope, wherein the type specifies the contents 
+of the packet, e.g., channel control (TLS ciphertext) bytes. 
+
+~~~
+ Application (configure and I/O)
+   +      ^
+   |      |
++--v--------+        
+|  OpenVPN  |        +-----------+
+| interface |        |    TLS    |
+|  + record |        | (control) |
++-----------+        +-----------+
+      |                    |
+      |              +-----v-----+
+      |              |reliability|
+      |              |   layer   |
+      |              +-----------+
+      |                    |
+      +-------+   +--------+
+              |   |
+         +----v---V------+
+         |    OpenVPN    |
+         | (multiplexer) |
+         +---------------+
+                 |
+         +-------v-------+
+         |  (Unreliable) |
+         |   Transport   |
+         +---------------+
+~~~
+
+- DTLS-SRTP: DTLS {{RFC5764}} is commonly used as a way to perform mutual
+authentication and key agreement for SRTP {{RFC5763}}.  (Here,
+certificates marshal public keys between endpoints.  Thus, self-
+signed certificates may be used if peers do not mutually trust one
+another, as is common on the Internet.)  When DTLS is used,
+certificate fingerprints are transmitted out-of-band using SIP.
+Peers typically verify that DTLS-offered certificates match that
+which are offered over SIP.  This prevents active attacks on RTP, but
+not on the signaling (SIP or WebRTC) channel.
+
+~~~
+ Application (configure and I/O)
+   +      ^
+   |      |
++--v--------+        
+|   SRTP    |        +-----------+
+| interface |        |   DTLS    |
+|  + record |        | (control) |
++-----------+        +-----------+    
+      |                    |
+      +-------+   +--------+
+              |   |
+         +----V---v------+
+         |  (Unreliable) |
+         |   Transport   |
+         +---------------+
+~~~
+
+
 # Benefits of Separation
 
 ## Reducing Connection Latency
@@ -326,22 +398,26 @@ protocols that run on datagram transport protocols like UDP.
 This flexibility may be useful for implementations that are optimizing for packet size by choosing
 minimal/lightweight record protocols, while being able to use commonly supported control protocols
 like TLS. One example here is the approach of a VPN tunnel that uses ESP or Diet-ESP {{I-D.mglt-ipsecme-diet-esp}}
-to encrypt datagrams, but uses TLS for establishing keys.
+to encrypt datagrams, but uses TLS for establishing keys. This design is similar to that used by OpenVPN {{OpenVPN}},
+as described above.
 
-## Protocol Capability Negotiation
+## Protocol Capability and Upgrade Negotiation
 
 Enabling the use of a different transport protocol for the actual data transmission than for the
 cryptographic handshakes opens also the possibility to negotiate protocol capabilities for the data
 transmission. For TLS, usually TCP is the appropriate transport protocol to use, as it is also widely
 supported by endpoints. Allowing an endpoint to indicate the support of other, new transport protocols
 within the TCP connection that is used for the cryptographic handshake, provides a dynamic
-transition path to enable easy deployment of new protocols.
+transition path to enable easy deployment of new protocols. Another example is providing an upgrade
+path from TCP+TLS to QUIC. If TLS could negotiate the use of other transport layers, such as QUIC, 
+applications could perform an abbreviated upgrade from TCP+TLS connections to QUIC, i.e., without doing
+a full QUIC handshake.
 
 <!-- CAW: a hint to TLPN could be dropped here -->
 
 # Transport Service Architecture Integration
 
-The Transport Services Architecture ({{I-D.pauly-taps-arch}}) describes a system 
+The Transport Services Architecture ({{I-D.ietf-taps-arch}}) describes a system 
 that can provide transport security functionality behind a common interface.
 Such systems and their APIs provide applications with
 the ability to establish connections for sending and receiving data. The lifetime
